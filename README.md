@@ -1,17 +1,23 @@
-# shiori
+# 栞 Shiori — Premium Manga Reader
 
-A new Flutter project.
+A high-performance manga reader app built with Flutter.
 
-## Getting Started
+## Features
+- Browse & search thousands of manga via MangaDex
+- Personal library with reading progress tracking
+- Reader with R→L, L→R, and Webtoon modes
+- Dynamic color themes extracted from cover art
+- Biometric lock & Incognito mode
+- Reading history
+- Offline support
 
-This project is a starting point for a Flutter application.
+## Download
+[Latest Release](https://github.com/MrDeX69/Shiori/releases/latest)
 
-A few resources to get you started if this is your first Flutter project:
+## Built With
+- Flutter / Dart
+- MangaDex API
+- Riverpod, Drift, Go Router
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## License
+MIT License — see [LICENSE](LICENSE)
