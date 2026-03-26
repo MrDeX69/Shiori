@@ -1,0 +1,67 @@
+import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:drift/drift.dart';
+import '../../core/di/injection.dart';
+import '../../data/local/app_database.dart';
+import '../../domain/models/manga.dart';
+
+final libraryProvider = StreamProvider<List<Manga>>((ref) {
+  final db = getIt<AppDatabase>();
+  return db.select(db.mangaTable).watch().map(
+        (rows) => rows.map((row) => _rowToManga(row)).toList(),
+  );
+});
+
+final isMangaInLibraryProvider =
+FutureProvider.family<bool, String>((ref, mangaId) async {
+  final db = getIt<AppDatabase>();
+  return db.isMangaInLibrary(mangaId);
+});
+
+Future<void> addToLibrary(Manga manga) async {
+  final db = getIt<AppDatabase>();
+  await db.insertManga(
+    MangaTableCompanion(
+      id: Value(manga.id),
+      title: Value(manga.title),
+      description: Value(manga.description),
+      coverUrl: Value(manga.coverUrl),
+      tags: Value(jsonEncode(manga.tags)),
+      authors: Value(jsonEncode(manga.authors)),
+      status: Value(manga.status?.name),
+    ),
+  );
+}
+
+Future<void> removeFromLibrary(String mangaId) async {
+  final db = getIt<AppDatabase>();
+  await db.deleteManga(mangaId);
+}
+
+Manga _rowToManga(MangaTableData row) {
+  List<String> tags = [];
+  List<String> authors = [];
+
+  try {
+    tags = List<String>.from(jsonDecode(row.tags));
+    authors = List<String>.from(jsonDecode(row.authors));
+  } catch (_) {}
+
+  MangaStatus? status;
+  if (row.status != null) {
+    status = MangaStatus.values.firstWhere(
+          (e) => e.name == row.status,
+      orElse: () => MangaStatus.ongoing,
+    );
+  }
+
+  return Manga(
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    coverUrl: row.coverUrl,
+    tags: tags,
+    authors: authors,
+    status: status,
+  );
+}
