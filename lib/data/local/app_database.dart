@@ -26,6 +26,9 @@ class MangaTable extends Table {
 class ChapterProgressTable extends Table {
   TextColumn get chapterId => text()();
   TextColumn get mangaId => text()();
+  TextColumn get mangaTitle => text().withDefault(const Constant(''))();
+  TextColumn get mangaCoverUrl => text().nullable()();
+  TextColumn get chapterNumber => text().nullable()();
   IntColumn get lastPage => integer().withDefault(const Constant(0))();
   BoolColumn get isRead => boolean().withDefault(const Constant(false))();
   DateTimeColumn get readAt => dateTime().nullable()();
@@ -40,11 +43,23 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
-  // Library queries
-  Future<List<MangaTableData>> getLibrary() =>
-      select(mangaTable).get();
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (migrator, from, to) async {
+      if (from < 2) {
+        await migrator.addColumn(
+            chapterProgressTable, chapterProgressTable.mangaTitle);
+        await migrator.addColumn(
+            chapterProgressTable, chapterProgressTable.mangaCoverUrl);
+        await migrator.addColumn(
+            chapterProgressTable, chapterProgressTable.chapterNumber);
+      }
+    },
+  );
+
+  Future<List<MangaTableData>> getLibrary() => select(mangaTable).get();
 
   Future<void> insertManga(MangaTableCompanion manga) =>
       into(mangaTable).insertOnConflictUpdate(manga);
@@ -53,13 +68,11 @@ class AppDatabase extends _$AppDatabase {
       (delete(mangaTable)..where((t) => t.id.equals(id))).go();
 
   Future<bool> isMangaInLibrary(String id) async {
-    final result = await (select(mangaTable)
-      ..where((t) => t.id.equals(id)))
+    final result = await (select(mangaTable)..where((t) => t.id.equals(id)))
         .getSingleOrNull();
     return result != null;
   }
 
-  // Progress queries
   Future<void> saveProgress(ChapterProgressTableCompanion progress) =>
       into(chapterProgressTable).insertOnConflictUpdate(progress);
 
@@ -82,6 +95,8 @@ class AppDatabase extends _$AppDatabase {
         ..orderBy([(t) => OrderingTerm.desc(t.readAt)])
         ..limit(50))
           .get();
+
+  Future<void> clearHistory() => delete(chapterProgressTable).go();
 }
 
 LazyDatabase _openConnection() {

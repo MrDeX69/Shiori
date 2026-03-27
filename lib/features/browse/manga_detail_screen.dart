@@ -238,8 +238,10 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
                                     orElse: () => chapters.first,
                                   );
                                   if (context.mounted) {
-                                    await context.push(
-                                        '/reader', extra: chapter);
+                                    await context.push('/reader', extra: {
+                                      'chapter': chapter,
+                                      'manga': widget.manga,
+                                    });
                                     ref.invalidate(lastReadChapterProvider(
                                         widget.manga.id));
                                   }
@@ -310,7 +312,10 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
                           color: Colors.white24,
                         ),
                         onTap: () async {
-                          await context.push('/reader', extra: chapter);
+                          await context.push('/reader', extra: {
+                            'chapter': chapter,
+                            'manga': widget.manga,
+                          });
                           ref.invalidate(
                               lastReadChapterProvider(widget.manga.id));
                         },

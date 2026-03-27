@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/chapter.dart';
 import '../../domain/models/manga.dart';
 import '../../features/library/library_screen.dart';
@@ -18,9 +18,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: false,
     routes: [
       ShellRoute(
-        builder: (context, state, child) {
-          return MainShell(child: child);
-        },
+        builder: (context, state, child) => MainShell(child: child),
         routes: [
           GoRoute(
             path: '/library',
@@ -50,8 +48,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/reader',
         builder: (context, state) {
-          final chapter = state.extra as Chapter;
-          return ReaderScreen(chapter: chapter);
+          final extra = state.extra as Map<String, dynamic>;
+          final chapter = extra['chapter'] as Chapter;
+          final manga = extra['manga'] as Manga?;
+          return ReaderScreen(chapter: chapter, manga: manga);
         },
       ),
       GoRoute(
@@ -62,20 +62,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class MainShell extends StatefulWidget {
+class MainShell extends ConsumerStatefulWidget {
   final Widget child;
   const MainShell({super.key, required this.child});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
-  int _currentIndex = 0;
+class _MainShellState extends ConsumerState<MainShell> {
   final _locations = ['/library', '/browse', '/history', '/downloads'];
+
+  int _locationToIndex(String location) {
+    for (int i = 0; i < _locations.length; i++) {
+      if (location.startsWith(_locations[i])) return i;
+    }
+    return 0;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final location = GoRouterState.of(context).uri.toString();
+    final currentIndex = _locationToIndex(location);
+
     return Scaffold(
       extendBody: false,
       body: widget.child,
@@ -101,9 +110,8 @@ class _MainShellState extends State<MainShell> {
               ),
             ),
             child: NavigationBar(
-              selectedIndex: _currentIndex,
+              selectedIndex: currentIndex,
               onDestinationSelected: (index) {
-                setState(() => _currentIndex = index);
                 context.go(_locations[index]);
               },
               backgroundColor: Colors.transparent,
@@ -111,47 +119,31 @@ class _MainShellState extends State<MainShell> {
               indicatorColor: const Color(0xFFE85D75).withOpacity(0.15),
               destinations: const [
                 NavigationDestination(
-                  icon: Icon(
-                    Icons.collections_bookmark_outlined,
-                    color: Color(0xFF666677),
-                  ),
-                  selectedIcon: Icon(
-                    Icons.collections_bookmark,
-                    color: Color(0xFFE85D75),
-                  ),
+                  icon: Icon(Icons.collections_bookmark_outlined,
+                      color: Color(0xFF666677)),
+                  selectedIcon: Icon(Icons.collections_bookmark,
+                      color: Color(0xFFE85D75)),
                   label: 'Library',
                 ),
                 NavigationDestination(
-                  icon: Icon(
-                    Icons.explore_outlined,
-                    color: Color(0xFF666677),
-                  ),
-                  selectedIcon: Icon(
-                    Icons.explore,
-                    color: Color(0xFFE85D75),
-                  ),
+                  icon: Icon(Icons.explore_outlined,
+                      color: Color(0xFF666677)),
+                  selectedIcon:
+                  Icon(Icons.explore, color: Color(0xFFE85D75)),
                   label: 'Browse',
                 ),
                 NavigationDestination(
-                  icon: Icon(
-                    Icons.history_outlined,
-                    color: Color(0xFF666677),
-                  ),
-                  selectedIcon: Icon(
-                    Icons.history,
-                    color: Color(0xFFE85D75),
-                  ),
+                  icon: Icon(Icons.history_outlined,
+                      color: Color(0xFF666677)),
+                  selectedIcon:
+                  Icon(Icons.history, color: Color(0xFFE85D75)),
                   label: 'History',
                 ),
                 NavigationDestination(
-                  icon: Icon(
-                    Icons.download_outlined,
-                    color: Color(0xFF666677),
-                  ),
-                  selectedIcon: Icon(
-                    Icons.download,
-                    color: Color(0xFFE85D75),
-                  ),
+                  icon: Icon(Icons.download_outlined,
+                      color: Color(0xFF666677)),
+                  selectedIcon:
+                  Icon(Icons.download, color: Color(0xFFE85D75)),
                   label: 'Downloads',
                 ),
               ],

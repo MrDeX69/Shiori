@@ -656,6 +656,40 @@ class $ChapterProgressTableTable extends ChapterProgressTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _mangaTitleMeta = const VerificationMeta(
+    'mangaTitle',
+  );
+  @override
+  late final GeneratedColumn<String> mangaTitle = GeneratedColumn<String>(
+    'manga_title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _mangaCoverUrlMeta = const VerificationMeta(
+    'mangaCoverUrl',
+  );
+  @override
+  late final GeneratedColumn<String> mangaCoverUrl = GeneratedColumn<String>(
+    'manga_cover_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _chapterNumberMeta = const VerificationMeta(
+    'chapterNumber',
+  );
+  @override
+  late final GeneratedColumn<String> chapterNumber = GeneratedColumn<String>(
+    'chapter_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _lastPageMeta = const VerificationMeta(
     'lastPage',
   );
@@ -694,6 +728,9 @@ class $ChapterProgressTableTable extends ChapterProgressTable
   List<GeneratedColumn> get $columns => [
     chapterId,
     mangaId,
+    mangaTitle,
+    mangaCoverUrl,
+    chapterNumber,
     lastPage,
     isRead,
     readAt,
@@ -725,6 +762,30 @@ class $ChapterProgressTableTable extends ChapterProgressTable
       );
     } else if (isInserting) {
       context.missing(_mangaIdMeta);
+    }
+    if (data.containsKey('manga_title')) {
+      context.handle(
+        _mangaTitleMeta,
+        mangaTitle.isAcceptableOrUnknown(data['manga_title']!, _mangaTitleMeta),
+      );
+    }
+    if (data.containsKey('manga_cover_url')) {
+      context.handle(
+        _mangaCoverUrlMeta,
+        mangaCoverUrl.isAcceptableOrUnknown(
+          data['manga_cover_url']!,
+          _mangaCoverUrlMeta,
+        ),
+      );
+    }
+    if (data.containsKey('chapter_number')) {
+      context.handle(
+        _chapterNumberMeta,
+        chapterNumber.isAcceptableOrUnknown(
+          data['chapter_number']!,
+          _chapterNumberMeta,
+        ),
+      );
     }
     if (data.containsKey('last_page')) {
       context.handle(
@@ -764,6 +825,18 @@ class $ChapterProgressTableTable extends ChapterProgressTable
         DriftSqlType.string,
         data['${effectivePrefix}manga_id'],
       )!,
+      mangaTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manga_title'],
+      )!,
+      mangaCoverUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manga_cover_url'],
+      ),
+      chapterNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chapter_number'],
+      ),
       lastPage: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}last_page'],
@@ -789,12 +862,18 @@ class ChapterProgressTableData extends DataClass
     implements Insertable<ChapterProgressTableData> {
   final String chapterId;
   final String mangaId;
+  final String mangaTitle;
+  final String? mangaCoverUrl;
+  final String? chapterNumber;
   final int lastPage;
   final bool isRead;
   final DateTime? readAt;
   const ChapterProgressTableData({
     required this.chapterId,
     required this.mangaId,
+    required this.mangaTitle,
+    this.mangaCoverUrl,
+    this.chapterNumber,
     required this.lastPage,
     required this.isRead,
     this.readAt,
@@ -804,6 +883,13 @@ class ChapterProgressTableData extends DataClass
     final map = <String, Expression>{};
     map['chapter_id'] = Variable<String>(chapterId);
     map['manga_id'] = Variable<String>(mangaId);
+    map['manga_title'] = Variable<String>(mangaTitle);
+    if (!nullToAbsent || mangaCoverUrl != null) {
+      map['manga_cover_url'] = Variable<String>(mangaCoverUrl);
+    }
+    if (!nullToAbsent || chapterNumber != null) {
+      map['chapter_number'] = Variable<String>(chapterNumber);
+    }
     map['last_page'] = Variable<int>(lastPage);
     map['is_read'] = Variable<bool>(isRead);
     if (!nullToAbsent || readAt != null) {
@@ -816,6 +902,13 @@ class ChapterProgressTableData extends DataClass
     return ChapterProgressTableCompanion(
       chapterId: Value(chapterId),
       mangaId: Value(mangaId),
+      mangaTitle: Value(mangaTitle),
+      mangaCoverUrl: mangaCoverUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mangaCoverUrl),
+      chapterNumber: chapterNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chapterNumber),
       lastPage: Value(lastPage),
       isRead: Value(isRead),
       readAt: readAt == null && nullToAbsent
@@ -832,6 +925,9 @@ class ChapterProgressTableData extends DataClass
     return ChapterProgressTableData(
       chapterId: serializer.fromJson<String>(json['chapterId']),
       mangaId: serializer.fromJson<String>(json['mangaId']),
+      mangaTitle: serializer.fromJson<String>(json['mangaTitle']),
+      mangaCoverUrl: serializer.fromJson<String?>(json['mangaCoverUrl']),
+      chapterNumber: serializer.fromJson<String?>(json['chapterNumber']),
       lastPage: serializer.fromJson<int>(json['lastPage']),
       isRead: serializer.fromJson<bool>(json['isRead']),
       readAt: serializer.fromJson<DateTime?>(json['readAt']),
@@ -843,6 +939,9 @@ class ChapterProgressTableData extends DataClass
     return <String, dynamic>{
       'chapterId': serializer.toJson<String>(chapterId),
       'mangaId': serializer.toJson<String>(mangaId),
+      'mangaTitle': serializer.toJson<String>(mangaTitle),
+      'mangaCoverUrl': serializer.toJson<String?>(mangaCoverUrl),
+      'chapterNumber': serializer.toJson<String?>(chapterNumber),
       'lastPage': serializer.toJson<int>(lastPage),
       'isRead': serializer.toJson<bool>(isRead),
       'readAt': serializer.toJson<DateTime?>(readAt),
@@ -852,12 +951,22 @@ class ChapterProgressTableData extends DataClass
   ChapterProgressTableData copyWith({
     String? chapterId,
     String? mangaId,
+    String? mangaTitle,
+    Value<String?> mangaCoverUrl = const Value.absent(),
+    Value<String?> chapterNumber = const Value.absent(),
     int? lastPage,
     bool? isRead,
     Value<DateTime?> readAt = const Value.absent(),
   }) => ChapterProgressTableData(
     chapterId: chapterId ?? this.chapterId,
     mangaId: mangaId ?? this.mangaId,
+    mangaTitle: mangaTitle ?? this.mangaTitle,
+    mangaCoverUrl: mangaCoverUrl.present
+        ? mangaCoverUrl.value
+        : this.mangaCoverUrl,
+    chapterNumber: chapterNumber.present
+        ? chapterNumber.value
+        : this.chapterNumber,
     lastPage: lastPage ?? this.lastPage,
     isRead: isRead ?? this.isRead,
     readAt: readAt.present ? readAt.value : this.readAt,
@@ -868,6 +977,15 @@ class ChapterProgressTableData extends DataClass
     return ChapterProgressTableData(
       chapterId: data.chapterId.present ? data.chapterId.value : this.chapterId,
       mangaId: data.mangaId.present ? data.mangaId.value : this.mangaId,
+      mangaTitle: data.mangaTitle.present
+          ? data.mangaTitle.value
+          : this.mangaTitle,
+      mangaCoverUrl: data.mangaCoverUrl.present
+          ? data.mangaCoverUrl.value
+          : this.mangaCoverUrl,
+      chapterNumber: data.chapterNumber.present
+          ? data.chapterNumber.value
+          : this.chapterNumber,
       lastPage: data.lastPage.present ? data.lastPage.value : this.lastPage,
       isRead: data.isRead.present ? data.isRead.value : this.isRead,
       readAt: data.readAt.present ? data.readAt.value : this.readAt,
@@ -879,6 +997,9 @@ class ChapterProgressTableData extends DataClass
     return (StringBuffer('ChapterProgressTableData(')
           ..write('chapterId: $chapterId, ')
           ..write('mangaId: $mangaId, ')
+          ..write('mangaTitle: $mangaTitle, ')
+          ..write('mangaCoverUrl: $mangaCoverUrl, ')
+          ..write('chapterNumber: $chapterNumber, ')
           ..write('lastPage: $lastPage, ')
           ..write('isRead: $isRead, ')
           ..write('readAt: $readAt')
@@ -887,13 +1008,25 @@ class ChapterProgressTableData extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(chapterId, mangaId, lastPage, isRead, readAt);
+  int get hashCode => Object.hash(
+    chapterId,
+    mangaId,
+    mangaTitle,
+    mangaCoverUrl,
+    chapterNumber,
+    lastPage,
+    isRead,
+    readAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ChapterProgressTableData &&
           other.chapterId == this.chapterId &&
           other.mangaId == this.mangaId &&
+          other.mangaTitle == this.mangaTitle &&
+          other.mangaCoverUrl == this.mangaCoverUrl &&
+          other.chapterNumber == this.chapterNumber &&
           other.lastPage == this.lastPage &&
           other.isRead == this.isRead &&
           other.readAt == this.readAt);
@@ -903,6 +1036,9 @@ class ChapterProgressTableCompanion
     extends UpdateCompanion<ChapterProgressTableData> {
   final Value<String> chapterId;
   final Value<String> mangaId;
+  final Value<String> mangaTitle;
+  final Value<String?> mangaCoverUrl;
+  final Value<String?> chapterNumber;
   final Value<int> lastPage;
   final Value<bool> isRead;
   final Value<DateTime?> readAt;
@@ -910,6 +1046,9 @@ class ChapterProgressTableCompanion
   const ChapterProgressTableCompanion({
     this.chapterId = const Value.absent(),
     this.mangaId = const Value.absent(),
+    this.mangaTitle = const Value.absent(),
+    this.mangaCoverUrl = const Value.absent(),
+    this.chapterNumber = const Value.absent(),
     this.lastPage = const Value.absent(),
     this.isRead = const Value.absent(),
     this.readAt = const Value.absent(),
@@ -918,6 +1057,9 @@ class ChapterProgressTableCompanion
   ChapterProgressTableCompanion.insert({
     required String chapterId,
     required String mangaId,
+    this.mangaTitle = const Value.absent(),
+    this.mangaCoverUrl = const Value.absent(),
+    this.chapterNumber = const Value.absent(),
     this.lastPage = const Value.absent(),
     this.isRead = const Value.absent(),
     this.readAt = const Value.absent(),
@@ -927,6 +1069,9 @@ class ChapterProgressTableCompanion
   static Insertable<ChapterProgressTableData> custom({
     Expression<String>? chapterId,
     Expression<String>? mangaId,
+    Expression<String>? mangaTitle,
+    Expression<String>? mangaCoverUrl,
+    Expression<String>? chapterNumber,
     Expression<int>? lastPage,
     Expression<bool>? isRead,
     Expression<DateTime>? readAt,
@@ -935,6 +1080,9 @@ class ChapterProgressTableCompanion
     return RawValuesInsertable({
       if (chapterId != null) 'chapter_id': chapterId,
       if (mangaId != null) 'manga_id': mangaId,
+      if (mangaTitle != null) 'manga_title': mangaTitle,
+      if (mangaCoverUrl != null) 'manga_cover_url': mangaCoverUrl,
+      if (chapterNumber != null) 'chapter_number': chapterNumber,
       if (lastPage != null) 'last_page': lastPage,
       if (isRead != null) 'is_read': isRead,
       if (readAt != null) 'read_at': readAt,
@@ -945,6 +1093,9 @@ class ChapterProgressTableCompanion
   ChapterProgressTableCompanion copyWith({
     Value<String>? chapterId,
     Value<String>? mangaId,
+    Value<String>? mangaTitle,
+    Value<String?>? mangaCoverUrl,
+    Value<String?>? chapterNumber,
     Value<int>? lastPage,
     Value<bool>? isRead,
     Value<DateTime?>? readAt,
@@ -953,6 +1104,9 @@ class ChapterProgressTableCompanion
     return ChapterProgressTableCompanion(
       chapterId: chapterId ?? this.chapterId,
       mangaId: mangaId ?? this.mangaId,
+      mangaTitle: mangaTitle ?? this.mangaTitle,
+      mangaCoverUrl: mangaCoverUrl ?? this.mangaCoverUrl,
+      chapterNumber: chapterNumber ?? this.chapterNumber,
       lastPage: lastPage ?? this.lastPage,
       isRead: isRead ?? this.isRead,
       readAt: readAt ?? this.readAt,
@@ -968,6 +1122,15 @@ class ChapterProgressTableCompanion
     }
     if (mangaId.present) {
       map['manga_id'] = Variable<String>(mangaId.value);
+    }
+    if (mangaTitle.present) {
+      map['manga_title'] = Variable<String>(mangaTitle.value);
+    }
+    if (mangaCoverUrl.present) {
+      map['manga_cover_url'] = Variable<String>(mangaCoverUrl.value);
+    }
+    if (chapterNumber.present) {
+      map['chapter_number'] = Variable<String>(chapterNumber.value);
     }
     if (lastPage.present) {
       map['last_page'] = Variable<int>(lastPage.value);
@@ -989,6 +1152,9 @@ class ChapterProgressTableCompanion
     return (StringBuffer('ChapterProgressTableCompanion(')
           ..write('chapterId: $chapterId, ')
           ..write('mangaId: $mangaId, ')
+          ..write('mangaTitle: $mangaTitle, ')
+          ..write('mangaCoverUrl: $mangaCoverUrl, ')
+          ..write('chapterNumber: $chapterNumber, ')
           ..write('lastPage: $lastPage, ')
           ..write('isRead: $isRead, ')
           ..write('readAt: $readAt, ')
@@ -1321,6 +1487,9 @@ typedef $$ChapterProgressTableTableCreateCompanionBuilder =
     ChapterProgressTableCompanion Function({
       required String chapterId,
       required String mangaId,
+      Value<String> mangaTitle,
+      Value<String?> mangaCoverUrl,
+      Value<String?> chapterNumber,
       Value<int> lastPage,
       Value<bool> isRead,
       Value<DateTime?> readAt,
@@ -1330,6 +1499,9 @@ typedef $$ChapterProgressTableTableUpdateCompanionBuilder =
     ChapterProgressTableCompanion Function({
       Value<String> chapterId,
       Value<String> mangaId,
+      Value<String> mangaTitle,
+      Value<String?> mangaCoverUrl,
+      Value<String?> chapterNumber,
       Value<int> lastPage,
       Value<bool> isRead,
       Value<DateTime?> readAt,
@@ -1352,6 +1524,21 @@ class $$ChapterProgressTableTableFilterComposer
 
   ColumnFilters<String> get mangaId => $composableBuilder(
     column: $table.mangaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mangaTitle => $composableBuilder(
+    column: $table.mangaTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mangaCoverUrl => $composableBuilder(
+    column: $table.mangaCoverUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chapterNumber => $composableBuilder(
+    column: $table.chapterNumber,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1390,6 +1577,21 @@ class $$ChapterProgressTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get mangaTitle => $composableBuilder(
+    column: $table.mangaTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mangaCoverUrl => $composableBuilder(
+    column: $table.mangaCoverUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chapterNumber => $composableBuilder(
+    column: $table.chapterNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get lastPage => $composableBuilder(
     column: $table.lastPage,
     builder: (column) => ColumnOrderings(column),
@@ -1420,6 +1622,21 @@ class $$ChapterProgressTableTableAnnotationComposer
 
   GeneratedColumn<String> get mangaId =>
       $composableBuilder(column: $table.mangaId, builder: (column) => column);
+
+  GeneratedColumn<String> get mangaTitle => $composableBuilder(
+    column: $table.mangaTitle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mangaCoverUrl => $composableBuilder(
+    column: $table.mangaCoverUrl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get chapterNumber => $composableBuilder(
+    column: $table.chapterNumber,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get lastPage =>
       $composableBuilder(column: $table.lastPage, builder: (column) => column);
@@ -1476,6 +1693,9 @@ class $$ChapterProgressTableTableTableManager
               ({
                 Value<String> chapterId = const Value.absent(),
                 Value<String> mangaId = const Value.absent(),
+                Value<String> mangaTitle = const Value.absent(),
+                Value<String?> mangaCoverUrl = const Value.absent(),
+                Value<String?> chapterNumber = const Value.absent(),
                 Value<int> lastPage = const Value.absent(),
                 Value<bool> isRead = const Value.absent(),
                 Value<DateTime?> readAt = const Value.absent(),
@@ -1483,6 +1703,9 @@ class $$ChapterProgressTableTableTableManager
               }) => ChapterProgressTableCompanion(
                 chapterId: chapterId,
                 mangaId: mangaId,
+                mangaTitle: mangaTitle,
+                mangaCoverUrl: mangaCoverUrl,
+                chapterNumber: chapterNumber,
                 lastPage: lastPage,
                 isRead: isRead,
                 readAt: readAt,
@@ -1492,6 +1715,9 @@ class $$ChapterProgressTableTableTableManager
               ({
                 required String chapterId,
                 required String mangaId,
+                Value<String> mangaTitle = const Value.absent(),
+                Value<String?> mangaCoverUrl = const Value.absent(),
+                Value<String?> chapterNumber = const Value.absent(),
                 Value<int> lastPage = const Value.absent(),
                 Value<bool> isRead = const Value.absent(),
                 Value<DateTime?> readAt = const Value.absent(),
@@ -1499,6 +1725,9 @@ class $$ChapterProgressTableTableTableManager
               }) => ChapterProgressTableCompanion.insert(
                 chapterId: chapterId,
                 mangaId: mangaId,
+                mangaTitle: mangaTitle,
+                mangaCoverUrl: mangaCoverUrl,
+                chapterNumber: chapterNumber,
                 lastPage: lastPage,
                 isRead: isRead,
                 readAt: readAt,

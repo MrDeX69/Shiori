@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/chapter.dart';
+import '../../domain/models/manga.dart';
 import '../../core/di/injection.dart';
 import '../../data/local/app_database.dart';
+import '../../features/settings/settings_screen.dart';
 import 'reader_provider.dart';
 
 enum ReaderMode { leftToRight, rightToLeft, webtoon }
 
 class ReaderScreen extends ConsumerStatefulWidget {
   final Chapter chapter;
-  const ReaderScreen({super.key, required this.chapter});
+  final Manga? manga;
+  const ReaderScreen({super.key, required this.chapter, this.manga});
 
   @override
   ConsumerState<ReaderScreen> createState() => _ReaderScreenState();
@@ -78,37 +81,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
               const SizedBox(height: 24),
               const Text(
                 'Reading Mode',
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.white54, fontSize: 13),
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _modeButton(
-                    context,
-                    setSheetState,
-                    ReaderMode.rightToLeft,
-                    'R→L',
-                    Icons.arrow_back,
-                  ),
+                  _modeButton(context, setSheetState,
+                      ReaderMode.rightToLeft, 'R→L', Icons.arrow_back),
                   const SizedBox(width: 8),
-                  _modeButton(
-                    context,
-                    setSheetState,
-                    ReaderMode.leftToRight,
-                    'L→R',
-                    Icons.arrow_forward,
-                  ),
+                  _modeButton(context, setSheetState,
+                      ReaderMode.leftToRight, 'L→R', Icons.arrow_forward),
                   const SizedBox(width: 8),
-                  _modeButton(
-                    context,
-                    setSheetState,
-                    ReaderMode.webtoon,
-                    'Webtoon',
-                    Icons.swap_vert,
-                  ),
+                  _modeButton(context, setSheetState,
+                      ReaderMode.webtoon, 'Webtoon', Icons.swap_vert),
                 ],
               ),
             ],
@@ -148,24 +133,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           ),
           child: Column(
             children: [
-              Icon(
-                icon,
-                color: isSelected
-                    ? const Color(0xFFE85D75)
-                    : Colors.white54,
-                size: 22,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: TextStyle(
+              Icon(icon,
                   color: isSelected
                       ? const Color(0xFFE85D75)
                       : Colors.white54,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+                  size: 22),
+              const SizedBox(height: 6),
+              Text(label,
+                  style: TextStyle(
+                    color: isSelected
+                        ? const Color(0xFFE85D75)
+                        : Colors.white54,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  )),
             ],
           ),
         ),
@@ -176,13 +157,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   @override
   Widget build(BuildContext context) {
     final pagesAsync = ref.watch(readerPagesProvider(widget.chapter.id));
+    final incognitoEnabled = ref.watch(incognitoEnabledProvider);
 
     if (!_progressLoaded) {
       return const Scaffold(
         backgroundColor: Colors.black,
         body: Center(
-          child: CircularProgressIndicator(color: Colors.white),
-        ),
+            child: CircularProgressIndicator(color: Colors.white)),
       );
     }
 
@@ -199,49 +180,43 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
               data: (pages) {
                 if (pages.isEmpty) {
                   return const Center(
-                    child: Text(
-                      'No pages found',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    child: Text('No pages found',
+                        style: TextStyle(color: Colors.white)),
                   );
                 }
                 if (_mode == ReaderMode.webtoon) {
                   return ListView.builder(
                     controller: _webtoonController,
                     itemCount: pages.length,
-                    itemBuilder: (context, index) {
-                      return Image.network(
-                        pages[index],
-                        fit: BoxFit.fitWidth,
-                        width: double.infinity,
-                        loadingBuilder: (_, child, progress) {
-                          if (progress == null) return child;
-                          return Container(
-                            height: 400,
-                            color: Colors.black,
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                value: progress.expectedTotalBytes != null
-                                    ? progress.cumulativeBytesLoaded /
-                                    progress.expectedTotalBytes!
-                                    : null,
-                                color: Colors.white,
-                              ),
-                            ),
-                          );
-                        },
-                        errorBuilder: (_, __, ___) => Container(
+                    itemBuilder: (context, index) => Image.network(
+                      pages[index],
+                      fit: BoxFit.fitWidth,
+                      width: double.infinity,
+                      loadingBuilder: (_, child, progress) {
+                        if (progress == null) return child;
+                        return Container(
                           height: 400,
-                          color: Colors.black12,
-                          child: const Center(
-                            child: Icon(
-                              Icons.broken_image_outlined,
-                              color: Colors.white24,
+                          color: Colors.black,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              value: progress.expectedTotalBytes != null
+                                  ? progress.cumulativeBytesLoaded /
+                                  progress.expectedTotalBytes!
+                                  : null,
+                              color: Colors.white,
                             ),
                           ),
+                        );
+                      },
+                      errorBuilder: (_, __, ___) => Container(
+                        height: 400,
+                        color: Colors.black12,
+                        child: const Center(
+                          child: Icon(Icons.broken_image_outlined,
+                              color: Colors.white24),
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   );
                 }
                 return PageView.builder(
@@ -254,48 +229,64 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       widget.chapter.id,
                       widget.chapter.mangaId,
                       index,
+                      mangaTitle: widget.manga?.title ?? '',
+                      mangaCoverUrl: widget.manga?.coverUrl,
+                      chapterNumber:
+                      widget.chapter.chapterNumber?.toString(),
+                      incognitoEnabled: incognitoEnabled,
                     );
                   },
                   itemCount: pages.length,
-                  itemBuilder: (context, index) {
-                    return InteractiveViewer(
-                      minScale: 1.0,
-                      maxScale: 4.0,
-                      child: Image.network(
-                        pages[index],
-                        fit: BoxFit.fitWidth,
-                        width: double.infinity,
-                        loadingBuilder: (_, child, progress) {
-                          if (progress == null) return child;
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: progress.expectedTotalBytes != null
-                                  ? progress.cumulativeBytesLoaded /
-                                  progress.expectedTotalBytes!
-                                  : null,
-                              color: Colors.white,
-                            ),
-                          );
-                        },
-                        errorBuilder: (_, __, ___) => const Center(
-                          child: Icon(
-                            Icons.broken_image_outlined,
-                            color: Colors.white24,
-                            size: 48,
+                  itemBuilder: (context, index) => InteractiveViewer(
+                    minScale: 1.0,
+                    maxScale: 4.0,
+                    child: Image.network(
+                      pages[index],
+                      fit: BoxFit.fitWidth,
+                      width: double.infinity,
+                      loadingBuilder: (_, child, progress) {
+                        if (progress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value: progress.expectedTotalBytes != null
+                                ? progress.cumulativeBytesLoaded /
+                                progress.expectedTotalBytes!
+                                : null,
+                            color: Colors.white,
                           ),
-                        ),
+                        );
+                      },
+                      errorBuilder: (_, __, ___) => const Center(
+                        child: Icon(Icons.broken_image_outlined,
+                            color: Colors.white24, size: 48),
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 );
               },
               loading: () => const Center(
                 child: CircularProgressIndicator(color: Colors.white),
               ),
               error: (err, _) => Center(
-                child: Text(
-                  'Error: $err',
-                  style: const TextStyle(color: Colors.red),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.wifi_off_outlined,
+                        color: Colors.white24, size: 64),
+                    const SizedBox(height: 16),
+                    const Text('Failed to load pages',
+                        style: TextStyle(color: Colors.white54)),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => ref.invalidate(
+                          readerPagesProvider(widget.chapter.id)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE85D75),
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -319,29 +310,45 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     child: Row(
                       children: [
                         IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                          ),
+                          icon: const Icon(Icons.arrow_back,
+                              color: Colors.white),
                           onPressed: () => Navigator.pop(context),
                         ),
                         Expanded(
-                          child: Text(
-                            widget.chapter.chapterNumber != null
-                                ? 'Chapter ${widget.chapter.chapterNumber}'
-                                : widget.chapter.title ?? '',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (widget.manga != null)
+                                Text(
+                                  widget.manga!.title,
+                                  style: const TextStyle(
+                                      color: Colors.white70, fontSize: 12),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              Text(
+                                widget.chapter.chapterNumber != null
+                                    ? 'Chapter ${widget.chapter.chapterNumber}'
+                                    : widget.chapter.title ?? '',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.settings,
-                            color: Colors.white,
+                        if (incognitoEnabled)
+                          const Padding(
+                            padding: EdgeInsets.only(right: 8),
+                            child: Icon(Icons.visibility_off_outlined,
+                                color: Colors.white38, size: 18),
                           ),
+                        IconButton(
+                          icon: const Icon(Icons.settings,
+                              color: Colors.white),
                           onPressed: () => _showSettingsSheet(context),
                         ),
                       ],
