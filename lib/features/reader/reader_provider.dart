@@ -10,13 +10,15 @@ FutureProvider.family<List<String>, String>((ref, chapterId) async {
   return api.getPageUrls(chapterId);
 });
 
-Future<void> saveProgress(String chapterId, String mangaId, int page) async {
+Future<void> saveProgress(
+    String chapterId, String mangaId, int page) async {
   final db = getIt<AppDatabase>();
   await db.saveProgress(
     ChapterProgressTableCompanion(
       chapterId: Value(chapterId),
       mangaId: Value(mangaId),
       lastPage: Value(page),
+      isRead: Value(false),
       readAt: Value(DateTime.now()),
     ),
   );

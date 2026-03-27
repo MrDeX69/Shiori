@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:palette_generator/palette_generator.dart';
@@ -15,21 +14,12 @@ class MangaDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<MangaDetailScreen> createState() => _MangaDetailScreenState();
 }
 
-class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
   Color _dominantColor = const Color(0xFF0A0A0F);
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-    Future.delayed(const Duration(milliseconds: 400), () {
-      if (mounted) _controller.forward();
-    });
     _extractColor();
   }
 
@@ -52,14 +42,9 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final chaptersAsync = ref.watch(chaptersProvider(widget.manga.id));
+    final lastReadAsync = ref.watch(lastReadChapterProvider(widget.manga.id));
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
@@ -160,10 +145,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
-                      )
-                          .animate(controller: _controller)
-                          .fadeIn(duration: 500.ms)
-                          .slideY(begin: 0.5, end: 0, duration: 500.ms),
+                      ),
                       if (widget.manga.authors.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text(
@@ -172,9 +154,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                             color: Colors.white54,
                             fontSize: 13,
                           ),
-                        )
-                            .animate(controller: _controller)
-                            .fadeIn(delay: 150.ms, duration: 500.ms),
+                        ),
                       ],
                       const SizedBox(height: 12),
                       if (widget.manga.status != null)
@@ -200,10 +180,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                        )
-                            .animate(controller: _controller)
-                            .fadeIn(delay: 200.ms, duration: 500.ms)
-                            .slideX(begin: -0.3, end: 0, duration: 500.ms),
+                        ),
                       if (widget.manga.tags.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         Wrap(
@@ -228,9 +205,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                               ),
                             );
                           }).toList(),
-                        )
-                            .animate(controller: _controller)
-                            .fadeIn(delay: 250.ms, duration: 500.ms),
+                        ),
                       ],
                       if (widget.manga.description != null) ...[
                         const SizedBox(height: 16),
@@ -243,11 +218,53 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                             fontSize: 13,
                             height: 1.5,
                           ),
-                        )
-                            .animate(controller: _controller)
-                            .fadeIn(delay: 300.ms, duration: 500.ms),
+                        ),
                       ],
                       const SizedBox(height: 24),
+                      lastReadAsync.when(
+                        data: (lastRead) {
+                          if (lastRead == null) return const SizedBox();
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  final chapters = await ref.read(
+                                      chaptersProvider(widget.manga.id)
+                                          .future);
+                                  final chapter = chapters.firstWhere(
+                                        (c) => c.id == lastRead.chapterId,
+                                    orElse: () => chapters.first,
+                                  );
+                                  if (context.mounted) {
+                                    await context.push(
+                                        '/reader', extra: chapter);
+                                    ref.invalidate(lastReadChapterProvider(
+                                        widget.manga.id));
+                                  }
+                                },
+                                icon: const Icon(Icons.play_arrow),
+                                label: Text(
+                                  'Continue Reading • Page ${lastRead.lastPage + 1}',
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFE85D75),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        loading: () => const SizedBox(),
+                        error: (_, __) => const SizedBox(),
+                      ),
                       const Text(
                         'Chapters',
                         style: TextStyle(
@@ -255,9 +272,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
-                      )
-                          .animate(controller: _controller)
-                          .fadeIn(delay: 350.ms, duration: 500.ms),
+                      ),
                     ],
                   ),
                 ),
@@ -294,8 +309,10 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                           Icons.chevron_right,
                           color: Colors.white24,
                         ),
-                        onTap: () {
-                          context.push('/reader', extra: chapter);
+                        onTap: () async {
+                          await context.push('/reader', extra: chapter);
+                          ref.invalidate(
+                              lastReadChapterProvider(widget.manga.id));
                         },
                       );
                     },

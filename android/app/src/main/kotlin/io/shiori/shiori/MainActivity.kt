@@ -1,4 +1,4 @@
-package io.shiori.shiori
+package io.shiori.app
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

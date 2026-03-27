@@ -68,6 +68,15 @@ class AppDatabase extends _$AppDatabase {
         ..where((t) => t.chapterId.equals(chapterId)))
           .getSingleOrNull();
 
+  Future<ChapterProgressTableData?> getLastReadForManga(String mangaId) async {
+    final results = await (select(chapterProgressTable)
+      ..where((t) => t.mangaId.equals(mangaId))
+      ..orderBy([(t) => OrderingTerm.desc(t.readAt)])
+      ..limit(1))
+        .get();
+    return results.isEmpty ? null : results.first;
+  }
+
   Future<List<ChapterProgressTableData>> getHistory() =>
       (select(chapterProgressTable)
         ..orderBy([(t) => OrderingTerm.desc(t.readAt)])

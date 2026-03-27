@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../common_widgets/manga_card.dart';
 import 'browse_provider.dart';
-import 'manga_detail_screen.dart';
 
 class BrowseScreen extends ConsumerStatefulWidget {
   const BrowseScreen({super.key});
@@ -101,15 +101,10 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                       final manga = mangaList[index];
                       return MangaCard(
                         manga: manga,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  MangaDetailScreen(manga: manga),
-                            ),
-                          );
-                        },
+                        onTap: () => context.push(
+                          '/manga/${manga.id}',
+                          extra: manga,
+                        ),
                       );
                     },
                     childCount: mangaList.length,

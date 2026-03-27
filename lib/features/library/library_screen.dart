@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../common_widgets/manga_card.dart';
-import '../browse/manga_detail_screen.dart';
 import 'library_provider.dart';
 
 class LibraryScreen extends ConsumerWidget {
@@ -80,15 +79,10 @@ class LibraryScreen extends ConsumerWidget {
                       final manga = mangaList[index];
                       return MangaCard(
                         manga: manga,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  MangaDetailScreen(manga: manga),
-                            ),
-                          );
-                        },
+                        onTap: () => context.push(
+                          '/manga/${manga.id}',
+                          extra: manga,
+                        ),
                       );
                     },
                     childCount: mangaList.length,

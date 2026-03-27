@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/chapter.dart';
+import '../../core/di/injection.dart';
+import '../../data/local/app_database.dart';
 import 'reader_provider.dart';
 
 enum ReaderMode { leftToRight, rightToLeft, webtoon }
@@ -15,22 +17,37 @@ class ReaderScreen extends ConsumerStatefulWidget {
 }
 
 class _ReaderScreenState extends ConsumerState<ReaderScreen> {
-  late PageController _pageController;
+  PageController? _pageController;
   final ScrollController _webtoonController = ScrollController();
   int _currentPage = 0;
   bool _showControls = true;
   ReaderMode _mode = ReaderMode.rightToLeft;
+  bool _progressLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _loadProgress();
+  }
+
+  Future<void> _loadProgress() async {
+    final db = getIt<AppDatabase>();
+    final progress = await db.getProgress(widget.chapter.id);
+    int startPage = 0;
+    if (progress != null && progress.lastPage > 0) {
+      startPage = progress.lastPage;
+    }
+    setState(() {
+      _currentPage = startPage;
+      _pageController = PageController(initialPage: startPage);
+      _progressLoaded = true;
+    });
   }
 
   @override
   void dispose() {
-    _pageController.dispose();
+    _pageController?.dispose();
     _webtoonController.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
@@ -159,6 +176,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   @override
   Widget build(BuildContext context) {
     final pagesAsync = ref.watch(readerPagesProvider(widget.chapter.id));
+
+    if (!_progressLoaded) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.black,

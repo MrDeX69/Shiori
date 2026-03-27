@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../domain/models/chapter.dart';
+import '../../domain/models/manga.dart';
 import '../../features/library/library_screen.dart';
 import '../../features/browse/browse_screen.dart';
+import '../../features/browse/manga_detail_screen.dart';
 import '../../features/history/history_screen.dart';
 import '../../features/downloads/downloads_screen.dart';
 import '../../features/reader/reader_screen.dart';
@@ -37,6 +39,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const DownloadsScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/manga/:id',
+        builder: (context, state) {
+          final manga = state.extra as Manga;
+          return MangaDetailScreen(manga: manga);
+        },
       ),
       GoRoute(
         path: '/reader',
