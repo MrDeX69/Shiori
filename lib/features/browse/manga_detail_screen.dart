@@ -18,6 +18,7 @@ class MangaDetailScreen extends ConsumerStatefulWidget {
 class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
     with RouteAware {
   Color _dominantColor = const Color(0xFF0A0A0F);
+  bool _descriptionExpanded = false;
 
   @override
   void initState() {
@@ -53,9 +54,22 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
     final chaptersAsync = ref.watch(chaptersProvider(widget.manga.id));
     final lastReadAsync = ref.watch(lastReadChapterProvider(widget.manga.id));
     final accent = ref.watch(accentColorProvider);
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor = isDark ? const Color(0xFF0A0A0F) : cs.surface;
+    final gradientEnd = isDark ? const Color(0xFF0A0A0F) : cs.surface;
+    final titleColor = isDark ? Colors.white : cs.onSurface;
+    final subtitleColor = isDark ? Colors.white54 : cs.onSurface.withOpacity(0.54);
+    final descColor = isDark ? Colors.white60 : cs.onSurface.withOpacity(0.6);
+    final tagBgColor = isDark ? const Color(0xFF1C1C28) : cs.surfaceContainerHighest;
+    final tagTextColor = isDark ? Colors.white70 : cs.onSurface.withOpacity(0.7);
+    final chapterTitleColor = isDark ? Colors.white : cs.onSurface;
+    final chapterSubtitleColor = isDark ? Colors.white38 : cs.onSurface.withOpacity(0.38);
+    final chevronColor = isDark ? Colors.white24 : cs.onSurface.withOpacity(0.24);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+      backgroundColor: bgColor,
       body: Stack(
         children: [
           AnimatedContainer(
@@ -64,7 +78,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [_dominantColor, const Color(0xFF0A0A0F)],
+                colors: [_dominantColor, gradientEnd],
                 stops: const [0.0, 0.5],
               ),
             ),
@@ -120,13 +134,13 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                           ),
                         ),
                       Container(
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
                               Colors.transparent,
-                              Color(0xFF0A0A0F),
+                              gradientEnd,
                             ],
                           ),
                         ),
@@ -143,8 +157,8 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                     children: [
                       Text(
                         widget.manga.title,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: titleColor,
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
@@ -153,8 +167,8 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                         const SizedBox(height: 4),
                         Text(
                           widget.manga.authors.join(', '),
-                          style: const TextStyle(
-                            color: Colors.white54,
+                          style: TextStyle(
+                            color: subtitleColor,
                             fontSize: 13,
                           ),
                         ),
@@ -196,13 +210,13 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                                 vertical: 3,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1C1C28),
+                                color: tagBgColor,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 tag,
-                                style: const TextStyle(
-                                  color: Colors.white70,
+                                style: TextStyle(
+                                  color: tagTextColor,
                                   fontSize: 11,
                                 ),
                               ),
@@ -212,14 +226,59 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                       ],
                       if (widget.manga.description != null) ...[
                         const SizedBox(height: 16),
-                        Text(
-                          widget.manga.description!,
-                          maxLines: 4,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white60,
-                            fontSize: 13,
-                            height: 1.5,
+                        GestureDetector(
+                          onTap: () => setState(() =>
+                          _descriptionExpanded = !_descriptionExpanded),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AnimatedCrossFade(
+                                firstChild: Text(
+                                  widget.manga.description!,
+                                  maxLines: 4,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: descColor,
+                                    fontSize: 13,
+                                    height: 1.5,
+                                  ),
+                                ),
+                                secondChild: Text(
+                                  widget.manga.description!,
+                                  style: TextStyle(
+                                    color: descColor,
+                                    fontSize: 13,
+                                    height: 1.5,
+                                  ),
+                                ),
+                                crossFadeState: _descriptionExpanded
+                                    ? CrossFadeState.showSecond
+                                    : CrossFadeState.showFirst,
+                                duration: const Duration(milliseconds: 250),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Text(
+                                    _descriptionExpanded
+                                        ? 'Show less'
+                                        : 'Show more',
+                                    style: TextStyle(
+                                      color: accent,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Icon(
+                                    _descriptionExpanded
+                                        ? Icons.keyboard_arrow_up
+                                        : Icons.keyboard_arrow_down,
+                                    color: accent,
+                                    size: 16,
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -269,10 +328,10 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                         loading: () => const SizedBox(),
                         error: (_, __) => const SizedBox(),
                       ),
-                      const Text(
+                      Text(
                         'Chapters',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: titleColor,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -295,23 +354,23 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                           chapter.chapterNumber != null
                               ? 'Chapter ${chapter.chapterNumber}'
                               : chapter.title ?? 'No title',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: chapterTitleColor,
                             fontSize: 14,
                           ),
                         ),
                         subtitle: chapter.scanlationGroup != null
                             ? Text(
                           chapter.scanlationGroup!,
-                          style: const TextStyle(
-                            color: Colors.white38,
+                          style: TextStyle(
+                            color: chapterSubtitleColor,
                             fontSize: 12,
                           ),
                         )
                             : null,
-                        trailing: const Icon(
+                        trailing: Icon(
                           Icons.chevron_right,
-                          color: Colors.white24,
+                          color: chevronColor,
                         ),
                         onTap: () async {
                           await context.push('/reader', extra: {
@@ -326,13 +385,11 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                     childCount: chapters.length,
                   ),
                 ),
-                loading: () => const SliverToBoxAdapter(
+                loading: () => SliverToBoxAdapter(
                   child: Center(
                     child: Padding(
-                      padding: EdgeInsets.all(32),
-                      child: CircularProgressIndicator(
-                        color: Color(0xFFE85D75),
-                      ),
+                      padding: const EdgeInsets.all(32),
+                      child: CircularProgressIndicator(color: accent),
                     ),
                   ),
                 ),
@@ -342,12 +399,14 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                       padding: const EdgeInsets.all(32),
                       child: Column(
                         children: [
-                          const Icon(Icons.wifi_off_outlined,
-                              color: Colors.white24, size: 48),
+                          Icon(Icons.wifi_off_outlined,
+                              color: cs.onSurface.withOpacity(0.24),
+                              size: 48),
                           const SizedBox(height: 16),
-                          const Text(
+                          Text(
                             'Failed to load chapters',
-                            style: TextStyle(color: Colors.white54),
+                            style: TextStyle(
+                                color: cs.onSurface.withOpacity(0.54)),
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
