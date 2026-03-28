@@ -56,10 +56,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  _dominantColor,
-                  const Color(0xFF0A0A0F),
-                ],
+                colors: [_dominantColor, const Color(0xFF0A0A0F)],
                 stops: const [0.0, 0.5],
               ),
             ),
@@ -73,8 +70,8 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
                 actions: [
                   Consumer(
                     builder: (context, ref, _) {
-                      final isInLibraryAsync =
-                      ref.watch(isMangaInLibraryProvider(widget.manga.id));
+                      final isInLibraryAsync = ref
+                          .watch(isMangaInLibraryProvider(widget.manga.id));
                       return isInLibraryAsync.when(
                         data: (isInLibrary) => IconButton(
                           icon: Icon(
@@ -254,8 +251,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
                                   backgroundColor: const Color(0xFFE85D75),
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
+                                      vertical: 14),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -328,15 +324,37 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
                   child: Center(
                     child: Padding(
                       padding: EdgeInsets.all(32),
-                      child: CircularProgressIndicator(),
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFE85D75),
+                      ),
                     ),
                   ),
                 ),
                 error: (err, _) => SliverToBoxAdapter(
                   child: Center(
-                    child: Text(
-                      'Error loading chapters: $err',
-                      style: const TextStyle(color: Colors.red),
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          const Icon(Icons.wifi_off_outlined,
+                              color: Colors.white24, size: 48),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Failed to load chapters',
+                            style: TextStyle(color: Colors.white54),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => ref.invalidate(
+                                chaptersProvider(widget.manga.id)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFE85D75),
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

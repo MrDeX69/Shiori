@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/theme/app_theme.dart';
 
-final hapticEnabledProvider = StateNotifierProvider<BoolSettingNotifier, bool>(
+final hapticEnabledProvider =
+StateNotifierProvider<BoolSettingNotifier, bool>(
       (ref) => BoolSettingNotifier('haptic_enabled', true),
 );
 
@@ -50,7 +52,6 @@ class SettingsScreen extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Cache cleared successfully'),
-          backgroundColor: Color(0xFF1C1C28),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -71,7 +72,6 @@ class SettingsScreen extends ConsumerWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Biometrics not available on this device'),
-              backgroundColor: Color(0xFF1C1C28),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -90,7 +90,9 @@ class SettingsScreen extends ConsumerWidget {
       );
 
       if (authenticated) {
-        await ref.read(biometricEnabledProvider.notifier).toggle(!currentValue);
+        await ref
+            .read(biometricEnabledProvider.notifier)
+            .toggle(!currentValue);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -99,7 +101,6 @@ class SettingsScreen extends ConsumerWidget {
                     ? 'Biometric lock disabled'
                     : 'Biometric lock enabled',
               ),
-              backgroundColor: const Color(0xFF1C1C28),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -118,139 +119,253 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
+  void _showThemeDialog(BuildContext context, WidgetRef ref) {
+    final currentMode = ref.read(themeModeProvider);
+    final cs = Theme.of(context).colorScheme;
+    final accent = ref.read(accentColorProvider);
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: cs.surfaceContainerHighest,
+        title: Text('Choose Theme',
+            style: TextStyle(color: cs.onSurface)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: AppThemeMode.values.map((mode) {
+            final isSelected = mode == currentMode;
+            final label = switch (mode) {
+              AppThemeMode.dark => 'Dark',
+              AppThemeMode.amoled => 'AMOLED Black',
+              AppThemeMode.light => 'Light',
+            };
+            final icon = switch (mode) {
+              AppThemeMode.dark => Icons.dark_mode_outlined,
+              AppThemeMode.amoled => Icons.brightness_2_outlined,
+              AppThemeMode.light => Icons.light_mode_outlined,
+            };
+            return ListTile(
+              leading: Icon(icon,
+                  color: isSelected ? accent : cs.onSurface.withOpacity(0.54)),
+              title: Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? accent : cs.onSurface,
+                  fontWeight: isSelected
+                      ? FontWeight.w600
+                      : FontWeight.normal,
+                ),
+              ),
+              trailing: isSelected
+                  ? Icon(Icons.check, color: accent)
+                  : null,
+              onTap: () {
+                ref.read(themeModeProvider.notifier).setTheme(mode);
+                Navigator.pop(context);
+              },
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  void _showAccentDialog(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: cs.surfaceContainerHighest,
+        title: Text('Accent Color',
+            style: TextStyle(color: cs.onSurface)),
+        content: Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: AccentColorNotifier.presets.map((color) {
+            final isSelected = ref.read(accentColorProvider) == color;
+            return GestureDetector(
+              onTap: () {
+                ref.read(accentColorProvider.notifier).setColor(color);
+                Navigator.pop(context);
+              },
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: isSelected
+                      ? Border.all(color: Colors.white, width: 3)
+                      : null,
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.4),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: isSelected
+                    ? const Icon(Icons.check,
+                    color: Colors.white, size: 20)
+                    : null,
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hapticEnabled = ref.watch(hapticEnabledProvider);
     final incognitoEnabled = ref.watch(incognitoEnabledProvider);
     final biometricEnabled = ref.watch(biometricEnabledProvider);
+    final accent = ref.watch(accentColorProvider);
+    final themeMode = ref.watch(themeModeProvider);
+    final cs = Theme.of(context).colorScheme;
+
+    final themeName = switch (themeMode) {
+      AppThemeMode.dark => 'Dark',
+      AppThemeMode.amoled => 'AMOLED Black',
+      AppThemeMode.light => 'Light',
+    };
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
       body: CustomScrollView(
         slivers: [
           const SliverAppBar(
             floating: true,
             snap: true,
-            backgroundColor: Color(0xFF0A0A0F),
             title: Text('Settings'),
           ),
           SliverList(
             delegate: SliverChildListDelegate([
-              _sectionHeader('Appearance'),
+              _sectionHeader('Appearance', accent),
               _settingsTile(
                 icon: Icons.dark_mode_outlined,
                 title: 'Theme',
-                subtitle: 'Dark',
-                onTap: () {},
+                subtitle: themeName,
+                accent: accent,
+                cs: cs,
+                onTap: () => _showThemeDialog(context, ref),
               ),
               _settingsTile(
                 icon: Icons.color_lens_outlined,
-                title: 'Dynamic Color',
-                subtitle: 'Extract color from manga covers',
-                trailing: Switch(
-                  value: true,
-                  onChanged: (_) {},
-                  activeColor: const Color(0xFFE85D75),
+                title: 'Accent Color',
+                subtitle: 'Customize app color',
+                accent: accent,
+                cs: cs,
+                trailing: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: accent,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: accent.withOpacity(0.4),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
                 ),
-                onTap: () {},
+                onTap: () => _showAccentDialog(context, ref),
               ),
-              _sectionHeader('Reader'),
-              _settingsTile(
-                icon: Icons.menu_book_outlined,
-                title: 'Default Reading Mode',
-                subtitle: 'Right to Left',
-                onTap: () {},
-              ),
+              _sectionHeader('Reader', accent),
               _settingsTile(
                 icon: Icons.vibration_outlined,
                 title: 'Haptic Feedback',
                 subtitle: 'Vibrate on page turn',
+                accent: accent,
+                cs: cs,
                 trailing: Switch(
                   value: hapticEnabled,
-                  onChanged: (val) {
-                    ref.read(hapticEnabledProvider.notifier).toggle(val);
-                  },
-                  activeColor: const Color(0xFFE85D75),
+                  onChanged: (val) =>
+                      ref.read(hapticEnabledProvider.notifier).toggle(val),
+                  activeColor: accent,
                 ),
-                onTap: () {},
+                onTap: () => ref
+                    .read(hapticEnabledProvider.notifier)
+                    .toggle(!hapticEnabled),
               ),
-              _settingsTile(
-                icon: Icons.download_outlined,
-                title: 'Preload Pages',
-                subtitle: 'Load ahead for faster reading',
-                trailing: Switch(
-                  value: true,
-                  onChanged: (_) {},
-                  activeColor: const Color(0xFFE85D75),
-                ),
-                onTap: () {},
-              ),
-              _sectionHeader('Privacy'),
+              _sectionHeader('Privacy', accent),
               _settingsTile(
                 icon: Icons.fingerprint_outlined,
                 title: 'Biometric Lock',
                 subtitle: biometricEnabled
                     ? 'App is locked with fingerprint'
                     : 'Lock app with fingerprint',
+                accent: accent,
+                cs: cs,
                 trailing: Switch(
                   value: biometricEnabled,
                   onChanged: (_) =>
                       _toggleBiometric(context, ref, biometricEnabled),
-                  activeColor: const Color(0xFFE85D75),
+                  activeColor: accent,
                 ),
-                onTap: () => _toggleBiometric(context, ref, biometricEnabled),
+                onTap: () =>
+                    _toggleBiometric(context, ref, biometricEnabled),
               ),
               _settingsTile(
                 icon: Icons.visibility_off_outlined,
                 title: 'Incognito Mode',
                 subtitle: incognitoEnabled
                     ? 'History is not being saved'
-                    : 'Don\'t save reading history',
+                    : "Don't save reading history",
+                accent: accent,
+                cs: cs,
                 trailing: Switch(
                   value: incognitoEnabled,
                   onChanged: (val) {
-                    ref.read(incognitoEnabledProvider.notifier).toggle(val);
+                    ref
+                        .read(incognitoEnabledProvider.notifier)
+                        .toggle(val);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(
-                          val
-                              ? 'Incognito mode enabled'
-                              : 'Incognito mode disabled',
-                        ),
-                        backgroundColor: const Color(0xFF1C1C28),
+                        content: Text(val
+                            ? 'Incognito mode enabled'
+                            : 'Incognito mode disabled'),
                         behavior: SnackBarBehavior.floating,
                       ),
                     );
                   },
-                  activeColor: const Color(0xFFE85D75),
+                  activeColor: accent,
                 ),
                 onTap: () {},
               ),
-              _sectionHeader('Storage'),
+              _sectionHeader('Storage', accent),
               _settingsTile(
                 icon: Icons.delete_outline,
                 title: 'Clear Cache',
                 subtitle: 'Free up storage space',
+                accent: accent,
+                cs: cs,
                 onTap: () => _clearCache(context),
               ),
-              _settingsTile(
-                icon: Icons.folder_outlined,
-                title: 'Downloads Location',
-                subtitle: 'Internal Storage',
-                onTap: () {},
-              ),
-              _sectionHeader('About'),
+              _sectionHeader('About', accent),
               _settingsTile(
                 icon: Icons.info_outline,
                 title: 'Version',
-                subtitle: '1.0.0',
+                subtitle: '1.0.1',
+                accent: accent,
+                cs: cs,
                 onTap: () {},
               ),
               _settingsTile(
                 icon: Icons.code_outlined,
                 title: 'GitHub',
-                subtitle: 'View source code',
-                onTap: () {},
+                subtitle: 'github.com/MrDeX69/Shiori',
+                accent: accent,
+                cs: cs,
+                onTap: () async {
+                  final uri =
+                  Uri.parse('https://github.com/MrDeX69/Shiori');
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri,
+                        mode: LaunchMode.externalApplication);
+                  }
+                },
               ),
               const SizedBox(height: 32),
             ]),
@@ -260,25 +375,27 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _sectionHeader(String title) {
+  Widget _sectionHeader(String title, Color accent) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(
-          color: Color(0xFFE85D75),
+        style: TextStyle(
+          color: accent,
           fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.5,
         ),
       ),
-    ).animate().fadeIn(duration: 300.ms);
+    );
   }
 
   Widget _settingsTile({
     required IconData icon,
     required String title,
     required String subtitle,
+    required Color accent,
+    required ColorScheme cs,
     Widget? trailing,
     required VoidCallback onTap,
   }) {
@@ -291,36 +408,30 @@ class SettingsScreen extends ConsumerWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFF1C1C28),
+          color: cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(
-          icon,
-          color: const Color(0xFFE85D75),
-          size: 20,
-        ),
+        child: Icon(icon, color: accent, size: 20),
       ),
       title: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: cs.onSurface,
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(
-          color: Colors.white38,
+        style: TextStyle(
+          color: cs.onSurface.withOpacity(0.38),
           fontSize: 12,
         ),
       ),
       trailing: trailing ??
-          const Icon(
-            Icons.chevron_right,
-            color: Colors.white24,
-          ),
+          Icon(Icons.chevron_right,
+              color: cs.onSurface.withOpacity(0.24)),
       onTap: onTap,
-    ).animate().fadeIn(duration: 300.ms);
+    );
   }
 }

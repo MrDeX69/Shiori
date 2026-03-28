@@ -13,7 +13,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 1500), () {
+    Future.delayed(const Duration(milliseconds: 2000), () {
       if (mounted) widget.onComplete();
     });
   }
@@ -51,10 +51,10 @@ class _SplashScreenState extends State<SplashScreen> {
                 .scale(
               begin: const Offset(0.5, 0.5),
               end: const Offset(1.0, 1.0),
-              duration: 500.ms,
+              duration: 600.ms,
               curve: Curves.elasticOut,
             )
-                .fadeIn(duration: 300.ms),
+                .fadeIn(duration: 400.ms),
             const SizedBox(height: 24),
             const Text(
               'Shiori',
@@ -66,9 +66,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             )
                 .animate()
-                .fadeIn(delay: 300.ms, duration: 400.ms)
-                .slideY(
-                begin: 0.3, end: 0, delay: 300.ms, duration: 400.ms),
+                .fadeIn(delay: 400.ms, duration: 400.ms),
             const SizedBox(height: 8),
             const Text(
               'Your manga universe',
@@ -79,7 +77,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             )
                 .animate()
-                .fadeIn(delay: 500.ms, duration: 400.ms),
+                .fadeIn(delay: 600.ms, duration: 400.ms),
           ],
         ),
       ),

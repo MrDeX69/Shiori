@@ -109,14 +109,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         letterSpacing: 0.5,
                       ),
                       textAlign: TextAlign.center,
-                    )
-                        .animate()
-                        .fadeIn(delay: 200.ms, duration: 400.ms)
-                        .slideY(
-                        begin: 0.3,
-                        end: 0,
-                        delay: 200.ms,
-                        duration: 400.ms),
+                    ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
                     const SizedBox(height: 16),
                     Text(
                       page.description,
@@ -126,9 +119,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         height: 1.6,
                       ),
                       textAlign: TextAlign.center,
-                    )
-                        .animate()
-                        .fadeIn(delay: 300.ms, duration: 400.ms),
+                    ).animate().fadeIn(delay: 300.ms, duration: 400.ms),
                   ],
                 ),
               );

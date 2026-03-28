@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/theme/app_theme.dart';
 import '../../domain/models/chapter.dart';
 import '../../domain/models/manga.dart';
 import '../../features/library/library_screen.dart';
@@ -62,32 +63,39 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class MainShell extends ConsumerStatefulWidget {
+class MainShell extends ConsumerWidget {
   final Widget child;
   const MainShell({super.key, required this.child});
 
   @override
-  ConsumerState<MainShell> createState() => _MainShellState();
-}
-
-class _MainShellState extends ConsumerState<MainShell> {
-  final _locations = ['/library', '/browse', '/history', '/downloads'];
-
-  int _locationToIndex(String location) {
-    for (int i = 0; i < _locations.length; i++) {
-      if (location.startsWith(_locations[i])) return i;
-    }
-    return 0;
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final location = GoRouterState.of(context).uri.toString();
-    final currentIndex = _locationToIndex(location);
+    final accent = ref.watch(accentColorProvider);
+    final themeMode = ref.watch(themeModeProvider);
+    final locations = ['/library', '/browse', '/history', '/downloads'];
+
+    int currentIndex = 0;
+    for (int i = 0; i < locations.length; i++) {
+      if (location.startsWith(locations[i])) {
+        currentIndex = i;
+        break;
+      }
+    }
+
+    final isLight = themeMode == AppThemeMode.light;
+    final navBgColor = isLight
+        ? Colors.white.withOpacity(0.85)
+        : const Color(0xFF12121A).withOpacity(0.85);
+    final borderColor = isLight
+        ? Colors.black.withOpacity(0.08)
+        : Colors.white.withOpacity(0.08);
+    final unselectedColor = isLight
+        ? const Color(0xFF999999)
+        : const Color(0xFF666677);
 
     return Scaffold(
       extendBody: false,
-      body: widget.child,
+      body: child,
       bottomNavigationBar: ClipRRect(
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
@@ -97,53 +105,48 @@ class _MainShellState extends ConsumerState<MainShell> {
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF12121A).withOpacity(0.75),
+              color: navBgColor,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(24),
                 topRight: Radius.circular(24),
               ),
               border: Border(
                 top: BorderSide(
-                  color: Colors.white.withOpacity(0.08),
+                  color: borderColor,
                   width: 0.5,
                 ),
               ),
             ),
             child: NavigationBar(
               selectedIndex: currentIndex,
-              onDestinationSelected: (index) {
-                context.go(_locations[index]);
-              },
+              onDestinationSelected: (index) => context.go(locations[index]),
               backgroundColor: Colors.transparent,
               elevation: 0,
-              indicatorColor: const Color(0xFFE85D75).withOpacity(0.15),
-              destinations: const [
+              indicatorColor: accent.withOpacity(0.15),
+              destinations: [
                 NavigationDestination(
                   icon: Icon(Icons.collections_bookmark_outlined,
-                      color: Color(0xFF666677)),
+                      color: unselectedColor),
                   selectedIcon: Icon(Icons.collections_bookmark,
-                      color: Color(0xFFE85D75)),
+                      color: accent),
                   label: 'Library',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.explore_outlined,
-                      color: Color(0xFF666677)),
-                  selectedIcon:
-                  Icon(Icons.explore, color: Color(0xFFE85D75)),
+                      color: unselectedColor),
+                  selectedIcon: Icon(Icons.explore, color: accent),
                   label: 'Browse',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.history_outlined,
-                      color: Color(0xFF666677)),
-                  selectedIcon:
-                  Icon(Icons.history, color: Color(0xFFE85D75)),
+                      color: unselectedColor),
+                  selectedIcon: Icon(Icons.history, color: accent),
                   label: 'History',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.download_outlined,
-                      color: Color(0xFF666677)),
-                  selectedIcon:
-                  Icon(Icons.download, color: Color(0xFFE85D75)),
+                      color: unselectedColor),
+                  selectedIcon: Icon(Icons.download, color: accent),
                   label: 'Downloads',
                 ),
               ],

@@ -8,6 +8,7 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/di/injection.dart';
 import 'features/onboarding/onboarding_screen.dart';
+import 'features/splash/splash_screen.dart';
 
 void main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -46,6 +47,7 @@ class ShioriApp extends ConsumerStatefulWidget {
 
 class _ShioriAppState extends ConsumerState<ShioriApp>
     with WidgetsBindingObserver {
+  bool _showSplash = false;
   bool _showOnboarding = false;
   bool _isLocked = false;
   bool _isAuthenticating = false;
@@ -66,7 +68,7 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
 
     if (!onboardingComplete) {
       setState(() {
-        _showOnboarding = true;
+        _showSplash = true;
         _initialized = true;
       });
     } else if (biometricEnabled) {
@@ -95,7 +97,9 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
         setState(() => _isLocked = true);
       }
     }
-    if (state == AppLifecycleState.resumed && _isLocked && !_isAuthenticating) {
+    if (state == AppLifecycleState.resumed &&
+        _isLocked &&
+        !_isAuthenticating) {
       _authenticate();
     }
   }
@@ -126,6 +130,12 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
     }
   }
 
+  ThemeData _buildTheme() {
+    final mode = ref.watch(themeModeProvider);
+    final accent = ref.watch(accentColorProvider);
+    return AppTheme.build(mode, accent);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_initialized) {
@@ -137,14 +147,25 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
       );
     }
 
+    if (_showSplash) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: _buildTheme(),
+        home: SplashScreen(
+          onComplete: () => setState(() {
+            _showSplash = false;
+            _showOnboarding = true;
+          }),
+        ),
+      );
+    }
+
     if (_showOnboarding) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.dark(),
+        theme: _buildTheme(),
         home: OnboardingScreen(
-          onComplete: () {
-            setState(() => _showOnboarding = false);
-          },
+          onComplete: () => setState(() => _showOnboarding = false),
         ),
       );
     }
@@ -152,7 +173,7 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
     if (_isLocked) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.dark(),
+        theme: _buildTheme(),
         home: Scaffold(
           backgroundColor: const Color(0xFF0A0A0F),
           body: Center(
@@ -164,17 +185,19 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
                   height: 80,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Color(0xFFE85D75),
-                        Color(0xFF9B3F5C),
+                        ref.watch(accentColorProvider),
+                        ref.watch(accentColorProvider).withOpacity(0.6),
                       ],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFE85D75).withOpacity(0.4),
+                        color: ref
+                            .watch(accentColorProvider)
+                            .withOpacity(0.4),
                         blurRadius: 30,
                         spreadRadius: 5,
                       ),
@@ -215,7 +238,7 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
                         : 'Authenticate',
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE85D75),
+                    backgroundColor: ref.watch(accentColorProvider),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 32,
@@ -237,7 +260,7 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
     return MaterialApp.router(
       title: 'Shiori',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark(),
+      theme: _buildTheme(),
       routerConfig: router,
     );
   }

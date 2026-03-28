@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/di/injection.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/local/app_database.dart';
 import '../../domain/models/chapter.dart';
 
@@ -51,22 +52,52 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final accent = ref.watch(accentColorProvider);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             floating: true,
             snap: true,
-            backgroundColor: const Color(0xFF0A0A0F),
             title: const Text('History'),
             actions: [
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.white54),
+                icon: Icon(Icons.delete_outline,
+                    color: cs.onSurface.withOpacity(0.54)),
                 onPressed: () async {
-                  final db = getIt<AppDatabase>();
-                  await db.clearHistory();
-                  _loadHistory();
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      backgroundColor: cs.surfaceContainerHighest,
+                      title: Text('Clear History',
+                          style: TextStyle(color: cs.onSurface)),
+                      content: Text(
+                        'Are you sure you want to clear all reading history?',
+                        style: TextStyle(
+                            color: cs.onSurface.withOpacity(0.54)),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: Text('Cancel',
+                              style: TextStyle(
+                                  color: cs.onSurface.withOpacity(0.54))),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: Text('Clear',
+                              style: TextStyle(color: accent)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    final db = getIt<AppDatabase>();
+                    await db.clearHistory();
+                    _loadHistory();
+                  }
                 },
               ),
             ],
@@ -80,17 +111,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Icon(Icons.history_outlined,
-                        size: 64, color: Colors.white24),
-                    SizedBox(height: 16),
+                        size: 64,
+                        color: cs.onSurface.withOpacity(0.24)),
+                    const SizedBox(height: 16),
                     Text('No reading history',
-                        style:
-                        TextStyle(color: Colors.white54, fontSize: 16)),
-                    SizedBox(height: 8),
+                        style: TextStyle(
+                            color: cs.onSurface.withOpacity(0.54),
+                            fontSize: 16)),
+                    const SizedBox(height: 8),
                     Text('Start reading to see your history here',
-                        style:
-                        TextStyle(color: Colors.white38, fontSize: 13)),
+                        style: TextStyle(
+                            color: cs.onSurface.withOpacity(0.38),
+                            fontSize: 13)),
                   ],
                 ),
               ),
@@ -111,16 +145,17 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                         width: 48,
                         height: 64,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _placeholder(),
+                        errorBuilder: (_, __, ___) =>
+                            _placeholder(cs, accent),
                       )
-                          : _placeholder(),
+                          : _placeholder(cs, accent),
                     ),
                     title: Text(
                       item.mangaTitle.isNotEmpty
                           ? item.mangaTitle
                           : 'Unknown Manga',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: cs.onSurface,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -131,11 +166,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                       item.chapterNumber != null
                           ? 'Chapter ${item.chapterNumber} • Page ${item.lastPage + 1}'
                           : 'Page ${item.lastPage + 1}',
-                      style: const TextStyle(
-                          color: Colors.white38, fontSize: 12),
+                      style: TextStyle(
+                          color: cs.onSurface.withOpacity(0.38),
+                          fontSize: 12),
                     ),
-                    trailing: const Icon(Icons.chevron_right,
-                        color: Colors.white24),
+                    trailing: Icon(Icons.chevron_right,
+                        color: cs.onSurface.withOpacity(0.24)),
                     onTap: () async {
                       final chapter = Chapter(
                         id: item.chapterId,
@@ -163,13 +199,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
     );
   }
 
-  Widget _placeholder() {
+  Widget _placeholder(ColorScheme cs, Color accent) {
     return Container(
       width: 48,
       height: 64,
-      color: const Color(0xFF1C1C28),
-      child: const Icon(Icons.menu_book_outlined,
-          color: Color(0xFFE85D75), size: 20),
+      color: cs.surfaceContainerHighest,
+      child: Icon(Icons.menu_book_outlined, color: accent, size: 20),
     );
   }
 }
