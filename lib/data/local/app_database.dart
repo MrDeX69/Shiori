@@ -18,6 +18,7 @@ class MangaTable extends Table {
   IntColumn get chapterCount => integer().withDefault(const Constant(0))();
   TextColumn get readingStatus => text().nullable()();
   IntColumn get lastReadChapter => integer().nullable()();
+  TextColumn get readingMode => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -43,7 +44,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -55,6 +56,9 @@ class AppDatabase extends _$AppDatabase {
             chapterProgressTable, chapterProgressTable.mangaCoverUrl);
         await migrator.addColumn(
             chapterProgressTable, chapterProgressTable.chapterNumber);
+      }
+      if (from < 3) {
+        await migrator.addColumn(mangaTable, mangaTable.readingMode);
       }
     },
   );
@@ -97,6 +101,18 @@ class AppDatabase extends _$AppDatabase {
           .get();
 
   Future<void> clearHistory() => delete(chapterProgressTable).go();
+
+  Future<String?> getReadingMode(String mangaId) async {
+    final result = await (select(mangaTable)
+      ..where((t) => t.id.equals(mangaId)))
+        .getSingleOrNull();
+    return result?.readingMode;
+  }
+
+  Future<void> saveReadingMode(String mangaId, String mode) async {
+    await (update(mangaTable)..where((t) => t.id.equals(mangaId)))
+        .write(MangaTableCompanion(readingMode: Value(mode)));
+  }
 }
 
 LazyDatabase _openConnection() {

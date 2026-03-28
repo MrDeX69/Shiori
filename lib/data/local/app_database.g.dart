@@ -114,6 +114,17 @@ class $MangaTableTable extends MangaTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _readingModeMeta = const VerificationMeta(
+    'readingMode',
+  );
+  @override
+  late final GeneratedColumn<String> readingMode = GeneratedColumn<String>(
+    'reading_mode',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -126,6 +137,7 @@ class $MangaTableTable extends MangaTable
     chapterCount,
     readingStatus,
     lastReadChapter,
+    readingMode,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -212,6 +224,15 @@ class $MangaTableTable extends MangaTable
         ),
       );
     }
+    if (data.containsKey('reading_mode')) {
+      context.handle(
+        _readingModeMeta,
+        readingMode.isAcceptableOrUnknown(
+          data['reading_mode']!,
+          _readingModeMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -261,6 +282,10 @@ class $MangaTableTable extends MangaTable
         DriftSqlType.int,
         data['${effectivePrefix}last_read_chapter'],
       ),
+      readingMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reading_mode'],
+      ),
     );
   }
 
@@ -281,6 +306,7 @@ class MangaTableData extends DataClass implements Insertable<MangaTableData> {
   final int chapterCount;
   final String? readingStatus;
   final int? lastReadChapter;
+  final String? readingMode;
   const MangaTableData({
     required this.id,
     required this.title,
@@ -292,6 +318,7 @@ class MangaTableData extends DataClass implements Insertable<MangaTableData> {
     required this.chapterCount,
     this.readingStatus,
     this.lastReadChapter,
+    this.readingMode,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -315,6 +342,9 @@ class MangaTableData extends DataClass implements Insertable<MangaTableData> {
     }
     if (!nullToAbsent || lastReadChapter != null) {
       map['last_read_chapter'] = Variable<int>(lastReadChapter);
+    }
+    if (!nullToAbsent || readingMode != null) {
+      map['reading_mode'] = Variable<String>(readingMode);
     }
     return map;
   }
@@ -341,6 +371,9 @@ class MangaTableData extends DataClass implements Insertable<MangaTableData> {
       lastReadChapter: lastReadChapter == null && nullToAbsent
           ? const Value.absent()
           : Value(lastReadChapter),
+      readingMode: readingMode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(readingMode),
     );
   }
 
@@ -360,6 +393,7 @@ class MangaTableData extends DataClass implements Insertable<MangaTableData> {
       chapterCount: serializer.fromJson<int>(json['chapterCount']),
       readingStatus: serializer.fromJson<String?>(json['readingStatus']),
       lastReadChapter: serializer.fromJson<int?>(json['lastReadChapter']),
+      readingMode: serializer.fromJson<String?>(json['readingMode']),
     );
   }
   @override
@@ -376,6 +410,7 @@ class MangaTableData extends DataClass implements Insertable<MangaTableData> {
       'chapterCount': serializer.toJson<int>(chapterCount),
       'readingStatus': serializer.toJson<String?>(readingStatus),
       'lastReadChapter': serializer.toJson<int?>(lastReadChapter),
+      'readingMode': serializer.toJson<String?>(readingMode),
     };
   }
 
@@ -390,6 +425,7 @@ class MangaTableData extends DataClass implements Insertable<MangaTableData> {
     int? chapterCount,
     Value<String?> readingStatus = const Value.absent(),
     Value<int?> lastReadChapter = const Value.absent(),
+    Value<String?> readingMode = const Value.absent(),
   }) => MangaTableData(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -405,6 +441,7 @@ class MangaTableData extends DataClass implements Insertable<MangaTableData> {
     lastReadChapter: lastReadChapter.present
         ? lastReadChapter.value
         : this.lastReadChapter,
+    readingMode: readingMode.present ? readingMode.value : this.readingMode,
   );
   MangaTableData copyWithCompanion(MangaTableCompanion data) {
     return MangaTableData(
@@ -426,6 +463,9 @@ class MangaTableData extends DataClass implements Insertable<MangaTableData> {
       lastReadChapter: data.lastReadChapter.present
           ? data.lastReadChapter.value
           : this.lastReadChapter,
+      readingMode: data.readingMode.present
+          ? data.readingMode.value
+          : this.readingMode,
     );
   }
 
@@ -441,7 +481,8 @@ class MangaTableData extends DataClass implements Insertable<MangaTableData> {
           ..write('status: $status, ')
           ..write('chapterCount: $chapterCount, ')
           ..write('readingStatus: $readingStatus, ')
-          ..write('lastReadChapter: $lastReadChapter')
+          ..write('lastReadChapter: $lastReadChapter, ')
+          ..write('readingMode: $readingMode')
           ..write(')'))
         .toString();
   }
@@ -458,6 +499,7 @@ class MangaTableData extends DataClass implements Insertable<MangaTableData> {
     chapterCount,
     readingStatus,
     lastReadChapter,
+    readingMode,
   );
   @override
   bool operator ==(Object other) =>
@@ -472,7 +514,8 @@ class MangaTableData extends DataClass implements Insertable<MangaTableData> {
           other.status == this.status &&
           other.chapterCount == this.chapterCount &&
           other.readingStatus == this.readingStatus &&
-          other.lastReadChapter == this.lastReadChapter);
+          other.lastReadChapter == this.lastReadChapter &&
+          other.readingMode == this.readingMode);
 }
 
 class MangaTableCompanion extends UpdateCompanion<MangaTableData> {
@@ -486,6 +529,7 @@ class MangaTableCompanion extends UpdateCompanion<MangaTableData> {
   final Value<int> chapterCount;
   final Value<String?> readingStatus;
   final Value<int?> lastReadChapter;
+  final Value<String?> readingMode;
   final Value<int> rowid;
   const MangaTableCompanion({
     this.id = const Value.absent(),
@@ -498,6 +542,7 @@ class MangaTableCompanion extends UpdateCompanion<MangaTableData> {
     this.chapterCount = const Value.absent(),
     this.readingStatus = const Value.absent(),
     this.lastReadChapter = const Value.absent(),
+    this.readingMode = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MangaTableCompanion.insert({
@@ -511,6 +556,7 @@ class MangaTableCompanion extends UpdateCompanion<MangaTableData> {
     this.chapterCount = const Value.absent(),
     this.readingStatus = const Value.absent(),
     this.lastReadChapter = const Value.absent(),
+    this.readingMode = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        title = Value(title);
@@ -525,6 +571,7 @@ class MangaTableCompanion extends UpdateCompanion<MangaTableData> {
     Expression<int>? chapterCount,
     Expression<String>? readingStatus,
     Expression<int>? lastReadChapter,
+    Expression<String>? readingMode,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -538,6 +585,7 @@ class MangaTableCompanion extends UpdateCompanion<MangaTableData> {
       if (chapterCount != null) 'chapter_count': chapterCount,
       if (readingStatus != null) 'reading_status': readingStatus,
       if (lastReadChapter != null) 'last_read_chapter': lastReadChapter,
+      if (readingMode != null) 'reading_mode': readingMode,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -553,6 +601,7 @@ class MangaTableCompanion extends UpdateCompanion<MangaTableData> {
     Value<int>? chapterCount,
     Value<String?>? readingStatus,
     Value<int?>? lastReadChapter,
+    Value<String?>? readingMode,
     Value<int>? rowid,
   }) {
     return MangaTableCompanion(
@@ -566,6 +615,7 @@ class MangaTableCompanion extends UpdateCompanion<MangaTableData> {
       chapterCount: chapterCount ?? this.chapterCount,
       readingStatus: readingStatus ?? this.readingStatus,
       lastReadChapter: lastReadChapter ?? this.lastReadChapter,
+      readingMode: readingMode ?? this.readingMode,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -603,6 +653,9 @@ class MangaTableCompanion extends UpdateCompanion<MangaTableData> {
     if (lastReadChapter.present) {
       map['last_read_chapter'] = Variable<int>(lastReadChapter.value);
     }
+    if (readingMode.present) {
+      map['reading_mode'] = Variable<String>(readingMode.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -622,6 +675,7 @@ class MangaTableCompanion extends UpdateCompanion<MangaTableData> {
           ..write('chapterCount: $chapterCount, ')
           ..write('readingStatus: $readingStatus, ')
           ..write('lastReadChapter: $lastReadChapter, ')
+          ..write('readingMode: $readingMode, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1192,6 +1246,7 @@ typedef $$MangaTableTableCreateCompanionBuilder =
       Value<int> chapterCount,
       Value<String?> readingStatus,
       Value<int?> lastReadChapter,
+      Value<String?> readingMode,
       Value<int> rowid,
     });
 typedef $$MangaTableTableUpdateCompanionBuilder =
@@ -1206,6 +1261,7 @@ typedef $$MangaTableTableUpdateCompanionBuilder =
       Value<int> chapterCount,
       Value<String?> readingStatus,
       Value<int?> lastReadChapter,
+      Value<String?> readingMode,
       Value<int> rowid,
     });
 
@@ -1265,6 +1321,11 @@ class $$MangaTableTableFilterComposer
 
   ColumnFilters<int> get lastReadChapter => $composableBuilder(
     column: $table.lastReadChapter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get readingMode => $composableBuilder(
+    column: $table.readingMode,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1327,6 +1388,11 @@ class $$MangaTableTableOrderingComposer
     column: $table.lastReadChapter,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get readingMode => $composableBuilder(
+    column: $table.readingMode,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$MangaTableTableAnnotationComposer
@@ -1375,6 +1441,11 @@ class $$MangaTableTableAnnotationComposer
     column: $table.lastReadChapter,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get readingMode => $composableBuilder(
+    column: $table.readingMode,
+    builder: (column) => column,
+  );
 }
 
 class $$MangaTableTableTableManager
@@ -1418,6 +1489,7 @@ class $$MangaTableTableTableManager
                 Value<int> chapterCount = const Value.absent(),
                 Value<String?> readingStatus = const Value.absent(),
                 Value<int?> lastReadChapter = const Value.absent(),
+                Value<String?> readingMode = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MangaTableCompanion(
                 id: id,
@@ -1430,6 +1502,7 @@ class $$MangaTableTableTableManager
                 chapterCount: chapterCount,
                 readingStatus: readingStatus,
                 lastReadChapter: lastReadChapter,
+                readingMode: readingMode,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1444,6 +1517,7 @@ class $$MangaTableTableTableManager
                 Value<int> chapterCount = const Value.absent(),
                 Value<String?> readingStatus = const Value.absent(),
                 Value<int?> lastReadChapter = const Value.absent(),
+                Value<String?> readingMode = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MangaTableCompanion.insert(
                 id: id,
@@ -1456,6 +1530,7 @@ class $$MangaTableTableTableManager
                 chapterCount: chapterCount,
                 readingStatus: readingStatus,
                 lastReadChapter: lastReadChapter,
+                readingMode: readingMode,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

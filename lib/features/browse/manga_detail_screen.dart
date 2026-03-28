@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:palette_generator/palette_generator.dart';
+import '../../core/theme/app_theme.dart';
 import '../../domain/models/manga.dart';
 import '../library/library_provider.dart';
 import 'manga_detail_provider.dart';
@@ -14,13 +15,19 @@ class MangaDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<MangaDetailScreen> createState() => _MangaDetailScreenState();
 }
 
-class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
+class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
+    with RouteAware {
   Color _dominantColor = const Color(0xFF0A0A0F);
 
   @override
   void initState() {
     super.initState();
     _extractColor();
+  }
+
+  @override
+  void didPopNext() {
+    ref.invalidate(lastReadChapterProvider(widget.manga.id));
   }
 
   Future<void> _extractColor() async {
@@ -45,6 +52,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
   Widget build(BuildContext context) {
     final chaptersAsync = ref.watch(chaptersProvider(widget.manga.id));
     final lastReadAsync = ref.watch(lastReadChapterProvider(widget.manga.id));
+    final accent = ref.watch(accentColorProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
@@ -78,9 +86,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
                             isInLibrary
                                 ? Icons.favorite
                                 : Icons.favorite_border,
-                            color: isInLibrary
-                                ? const Color(0xFFE85D75)
-                                : Colors.white,
+                            color: isInLibrary ? accent : Colors.white,
                           ),
                           onPressed: () async {
                             if (isInLibrary) {
@@ -248,7 +254,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
                                   'Continue Reading • Page ${lastRead.lastPage + 1}',
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFE85D75),
+                                  backgroundColor: accent,
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(
                                       vertical: 14),
@@ -348,7 +354,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen> {
                             onPressed: () => ref.invalidate(
                                 chaptersProvider(widget.manga.id)),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFE85D75),
+                              backgroundColor: accent,
                               foregroundColor: Colors.white,
                             ),
                             child: const Text('Retry'),
