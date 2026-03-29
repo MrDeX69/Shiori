@@ -122,7 +122,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
     final accent = ref.read(accentColorProvider);
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF1C1C28),
         title: const Text(
           'Select chapters',
@@ -161,7 +161,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel',
                 style: TextStyle(color: Colors.white54)),
           ),
@@ -178,7 +178,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                   _lastSelectedIndex = count - 1;
                 });
               }
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
             },
             child: Text('Select',
                 style: TextStyle(
@@ -208,6 +208,14 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
     ref.invalidate(readChapterIdsProvider(widget.manga.id));
     ref.invalidate(lastReadChapterProvider(widget.manga.id));
     _exitSelectionMode();
+  }
+
+  String _formatChapterNumber(String? number) {
+    if (number == null || number.isEmpty) return '';
+    final d = double.tryParse(number);
+    if (d == null) return number;
+    if (d == d.truncateToDouble()) return d.toInt().toString();
+    return number;
   }
 
   String _formatDate(DateTime date) {
@@ -601,7 +609,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                                     icon: const Icon(Icons.play_arrow),
                                     label: Text(
                                       lastRead.chapterNumber != null
-                                          ? 'Continue • Ch. ${lastRead.chapterNumber}'
+                                          ? 'Continue • Ch. ${_formatChapterNumber(lastRead.chapterNumber)}'
                                           : 'Continue Reading',
                                     ),
                                     style: ElevatedButton.styleFrom(
@@ -745,7 +753,7 @@ class _MangaDetailScreenState extends ConsumerState<MangaDetailScreen>
                                         children: [
                                           Text(
                                             chapter.chapterNumber != null
-                                                ? 'Chapter ${chapter.chapterNumber}'
+                                                ? 'Chapter ${_formatChapterNumber(chapter.chapterNumber.toString())}'
                                                 : chapter.title ??
                                                 'No title',
                                             style: TextStyle(

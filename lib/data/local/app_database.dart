@@ -72,7 +72,8 @@ class AppDatabase extends _$AppDatabase {
       (delete(mangaTable)..where((t) => t.id.equals(id))).go();
 
   Future<bool> isMangaInLibrary(String id) async {
-    final result = await (select(mangaTable)..where((t) => t.id.equals(id)))
+    final result =
+    await (select(mangaTable)..where((t) => t.id.equals(id)))
         .getSingleOrNull();
     return result != null;
   }
@@ -85,13 +86,38 @@ class AppDatabase extends _$AppDatabase {
         ..where((t) => t.chapterId.equals(chapterId)))
           .getSingleOrNull();
 
-  Future<ChapterProgressTableData?> getLastReadForManga(String mangaId) async {
-    final results = await (select(chapterProgressTable)
-      ..where((t) => t.mangaId.equals(mangaId))
-      ..orderBy([(t) => OrderingTerm.desc(t.readAt)])
-      ..limit(1))
+  Future<ChapterProgressTableData?> getLastReadForManga(
+      String mangaId) async {
+    // Uzmi sve chapitere za ovu mangu koji imaju bilo kakav progress
+    final all = await (select(chapterProgressTable)
+      ..where((t) => t.mangaId.equals(mangaId)))
         .get();
-    return results.isEmpty ? null : results.first;
+
+    if (all.isEmpty) return null;
+
+    // Prioritet 1: chapteri označeni kao read — uzmi najveći po broju
+    final readChapters =
+    all.where((r) => r.isRead && r.chapterNumber != null).toList();
+    if (readChapters.isNotEmpty) {
+      readChapters.sort((a, b) {
+        final numA = double.tryParse(a.chapterNumber ?? '') ?? 0;
+        final numB = double.tryParse(b.chapterNumber ?? '') ?? 0;
+        return numB.compareTo(numA);
+      });
+      return readChapters.first;
+    }
+
+    // Prioritet 2: in-progress (čitanje bez oznake read) — zadnji po readAt
+    final inProgress =
+    all.where((r) => !r.isRead && r.readAt != null).toList();
+    if (inProgress.isNotEmpty) {
+      inProgress.sort((a, b) =>
+          (b.readAt ?? DateTime(0)).compareTo(a.readAt ?? DateTime(0)));
+      return inProgress.first;
+    }
+
+    // Prioritet 3: bilo šta što postoji
+    return all.first;
   }
 
   Future<List<ChapterProgressTableData>> getHistory() =>
@@ -103,8 +129,8 @@ class AppDatabase extends _$AppDatabase {
   Future<void> clearHistory() => delete(chapterProgressTable).go();
 
   Future<String?> getReadingMode(String mangaId) async {
-    final result = await (select(mangaTable)
-      ..where((t) => t.id.equals(mangaId)))
+    final result =
+    await (select(mangaTable)..where((t) => t.id.equals(mangaId)))
         .getSingleOrNull();
     return result?.readingMode;
   }
@@ -150,8 +176,10 @@ class AppDatabase extends _$AppDatabase {
       String? mangaCoverUrl,
       List<Map<String, String?>> chapters,
       ) async {
+    final now = DateTime.now();
     await batch((b) {
-      for (final ch in chapters) {
+      for (int i = 0; i < chapters.length; i++) {
+        final ch = chapters[i];
         b.insert(
           chapterProgressTable,
           ChapterProgressTableCompanion(
@@ -161,7 +189,7 @@ class AppDatabase extends _$AppDatabase {
             mangaCoverUrl: Value(mangaCoverUrl),
             chapterNumber: Value(ch['number']),
             isRead: const Value(true),
-            readAt: Value(DateTime.now()),
+            readAt: Value(now.add(Duration(milliseconds: i))),
             lastPage: const Value(0),
           ),
           mode: InsertMode.insertOrReplace,
