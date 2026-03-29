@@ -113,6 +113,71 @@ class AppDatabase extends _$AppDatabase {
     await (update(mangaTable)..where((t) => t.id.equals(mangaId)))
         .write(MangaTableCompanion(readingMode: Value(mode)));
   }
+
+  Future<Set<String>> getReadChapterIds(String mangaId) async {
+    final results = await (select(chapterProgressTable)
+      ..where(
+              (t) => t.mangaId.equals(mangaId) & t.isRead.equals(true)))
+        .get();
+    return results.map((r) => r.chapterId).toSet();
+  }
+
+  Future<void> markChapterRead(
+      String chapterId,
+      String mangaId,
+      String mangaTitle,
+      String? mangaCoverUrl,
+      String? chapterNumber,
+      bool isRead,
+      ) async {
+    await into(chapterProgressTable).insertOnConflictUpdate(
+      ChapterProgressTableCompanion(
+        chapterId: Value(chapterId),
+        mangaId: Value(mangaId),
+        mangaTitle: Value(mangaTitle),
+        mangaCoverUrl: Value(mangaCoverUrl),
+        chapterNumber: Value(chapterNumber),
+        isRead: Value(isRead),
+        readAt: Value(isRead ? DateTime.now() : null),
+        lastPage: const Value(0),
+      ),
+    );
+  }
+
+  Future<void> markAllChaptersRead(
+      String mangaId,
+      String mangaTitle,
+      String? mangaCoverUrl,
+      List<Map<String, String?>> chapters,
+      ) async {
+    await batch((b) {
+      for (final ch in chapters) {
+        b.insert(
+          chapterProgressTable,
+          ChapterProgressTableCompanion(
+            chapterId: Value(ch['id']!),
+            mangaId: Value(mangaId),
+            mangaTitle: Value(mangaTitle),
+            mangaCoverUrl: Value(mangaCoverUrl),
+            chapterNumber: Value(ch['number']),
+            isRead: const Value(true),
+            readAt: Value(DateTime.now()),
+            lastPage: const Value(0),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+      }
+    });
+  }
+
+  Future<String?> getFirstUnreadChapterId(
+      String mangaId, List<String> allChapterIds) async {
+    final readIds = await getReadChapterIds(mangaId);
+    for (final id in allChapterIds) {
+      if (!readIds.contains(id)) return id;
+    }
+    return null;
+  }
 }
 
 LazyDatabase _openConnection() {

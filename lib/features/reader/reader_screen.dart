@@ -10,6 +10,7 @@ import '../../domain/models/manga.dart';
 import '../../core/di/injection.dart';
 import '../../data/local/app_database.dart';
 import '../../features/settings/settings_screen.dart';
+import '../../features/library/library_provider.dart';
 import '../browse/manga_detail_provider.dart';
 import 'reader_provider.dart';
 
@@ -264,13 +265,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           : const Color(0xFF1C1C28),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _autoScroll ? accent : Colors.transparent,
+                        color:
+                        _autoScroll ? accent : Colors.transparent,
                       ),
                     ),
                     child: Row(
                       children: [
                         Icon(Icons.play_circle_outline,
-                            color: _autoScroll ? accent : Colors.white54,
+                            color:
+                            _autoScroll ? accent : Colors.white54,
                             size: 22),
                         const SizedBox(width: 12),
                         Text(
@@ -278,7 +281,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                               ? 'Auto Scroll: ON'
                               : 'Auto Scroll: OFF',
                           style: TextStyle(
-                            color: _autoScroll ? accent : Colors.white54,
+                            color:
+                            _autoScroll ? accent : Colors.white54,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -368,6 +372,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     );
   }
 
+  void _markAsRead() {
+    markChapterAsRead(
+      widget.chapter.id,
+      widget.chapter.mangaId,
+      widget.manga?.title ?? '',
+      widget.manga?.coverUrl,
+      widget.chapter.chapterNumber?.toString(),
+    );
+  }
+
   Widget _buildTransitionPage(Color accent) {
     return Container(
       color: Colors.black,
@@ -419,7 +433,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: accent,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding:
+                      const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -436,7 +451,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white70,
                       side: const BorderSide(color: Colors.white24),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding:
+                      const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -509,7 +525,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                               color: Colors.black,
                               child: Center(
                                 child: CircularProgressIndicator(
-                                  value: progress.expectedTotalBytes != null
+                                  value: progress.expectedTotalBytes !=
+                                      null
                                       ? progress.cumulativeBytesLoaded /
                                       progress.expectedTotalBytes!
                                       : null,
@@ -539,6 +556,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       if (index < pages.length) {
                         HapticFeedback.lightImpact();
                         _saveProgress(index, incognitoEnabled);
+                        if (index == pages.length - 1) {
+                          _markAsRead();
+                        }
                       }
                     },
                     itemCount: pages.length + 1,
@@ -557,7 +577,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                             if (progress == null) return child;
                             return Center(
                               child: CircularProgressIndicator(
-                                value: progress.expectedTotalBytes != null
+                                value: progress.expectedTotalBytes !=
+                                    null
                                     ? progress.cumulativeBytesLoaded /
                                     progress.expectedTotalBytes!
                                     : null,
@@ -575,7 +596,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   );
                 },
                 loading: () => const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
+                  child:
+                  CircularProgressIndicator(color: Colors.white),
                 ),
                 error: (err, _) => Center(
                   child: Column(
@@ -600,8 +622,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   ),
                 ),
               ),
-
-              // Progress bar
               if (pagesAsync.value != null &&
                   pagesAsync.value!.isNotEmpty &&
                   _mode != ReaderMode.webtoon)
@@ -610,13 +630,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   left: 0,
                   right: 0,
                   child: LinearProgressIndicator(
-                    value: (_currentPage + 1) / pagesAsync.value!.length,
+                    value: (_currentPage + 1) /
+                        pagesAsync.value!.length,
                     backgroundColor: Colors.white12,
-                    valueColor: AlwaysStoppedAnimation<Color>(accent),
+                    valueColor:
+                    AlwaysStoppedAnimation<Color>(accent),
                     minHeight: 2,
                   ),
                 ),
-
               if (_showControls) ...[
                 Positioned(
                   top: 0,
@@ -643,7 +664,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           ),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment:
+                              CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 if (widget.manga != null)
@@ -668,19 +690,25 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                               ],
                             ),
                           ),
-                          if (_mode == ReaderMode.webtoon && _autoScroll)
+                          if (_mode == ReaderMode.webtoon &&
+                              _autoScroll)
                             Padding(
-                              padding: const EdgeInsets.only(right: 4),
+                              padding:
+                              const EdgeInsets.only(right: 4),
                               child: GestureDetector(
                                 onTap: _toggleAutoScroll,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
+                                  padding:
+                                  const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4),
                                   decoration: BoxDecoration(
                                     color: accent.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius:
+                                    BorderRadius.circular(8),
                                     border: Border.all(
-                                        color: accent.withOpacity(0.5)),
+                                        color:
+                                        accent.withOpacity(0.5)),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -692,7 +720,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                                           style: TextStyle(
                                               color: accent,
                                               fontSize: 11,
-                                              fontWeight: FontWeight.w600)),
+                                              fontWeight:
+                                              FontWeight.w600)),
                                     ],
                                   ),
                                 ),
@@ -701,13 +730,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           if (incognitoEnabled)
                             const Padding(
                               padding: EdgeInsets.only(right: 8),
-                              child: Icon(Icons.visibility_off_outlined,
-                                  color: Colors.white38, size: 18),
+                              child: Icon(
+                                  Icons.visibility_off_outlined,
+                                  color: Colors.white38,
+                                  size: 18),
                             ),
                           IconButton(
                             icon: const Icon(Icons.settings,
                                 color: Colors.white),
-                            onPressed: () => _showSettingsSheet(context),
+                            onPressed: () =>
+                                _showSettingsSheet(context),
                           ),
                         ],
                       ),
@@ -731,8 +763,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     ),
                     child: SafeArea(
                       child: Padding(
-                        padding:
-                        const EdgeInsets.fromLTRB(16, 16, 16, 20),
+                        padding: const EdgeInsets.fromLTRB(
+                            16, 16, 16, 20),
                         child: pagesAsync.value != null
                             ? Row(
                           mainAxisAlignment:
@@ -759,7 +791,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                             if (widget.manga != null)
                               GestureDetector(
                                 onTap: _goToNextChapter,
-                                child: const Icon(Icons.skip_next,
+                                child: const Icon(
+                                    Icons.skip_next,
                                     color: Colors.white38,
                                     size: 20),
                               )

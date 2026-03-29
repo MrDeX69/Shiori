@@ -38,6 +38,48 @@ Future<void> removeFromLibrary(String mangaId) async {
   await db.deleteManga(mangaId);
 }
 
+Future<void> saveProgress(
+    String chapterId,
+    String mangaId,
+    int page, {
+      required String mangaTitle,
+      String? mangaCoverUrl,
+      String? chapterNumber,
+      required bool incognitoEnabled,
+    }) async {
+  if (incognitoEnabled) return;
+  final db = getIt<AppDatabase>();
+  await db.saveProgress(
+    ChapterProgressTableCompanion(
+      chapterId: Value(chapterId),
+      mangaId: Value(mangaId),
+      mangaTitle: Value(mangaTitle),
+      mangaCoverUrl: Value(mangaCoverUrl),
+      chapterNumber: Value(chapterNumber),
+      lastPage: Value(page),
+      readAt: Value(DateTime.now()),
+    ),
+  );
+}
+
+Future<void> markChapterAsRead(
+    String chapterId,
+    String mangaId,
+    String mangaTitle,
+    String? mangaCoverUrl,
+    String? chapterNumber,
+    ) async {
+  final db = getIt<AppDatabase>();
+  await db.markChapterRead(
+    chapterId,
+    mangaId,
+    mangaTitle,
+    mangaCoverUrl,
+    chapterNumber,
+    true,
+  );
+}
+
 Manga _rowToManga(MangaTableData row) {
   List<String> tags = [];
   List<String> authors = [];

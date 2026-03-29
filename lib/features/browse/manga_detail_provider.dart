@@ -16,3 +16,9 @@ FutureProvider.family<ChapterProgressTableData?, String>(
       final db = getIt<AppDatabase>();
       return db.getLastReadForManga(mangaId);
     });
+
+final readChapterIdsProvider =
+FutureProvider.family<Set<String>, String>((ref, mangaId) async {
+  final db = getIt<AppDatabase>();
+  return db.getReadChapterIds(mangaId);
+});

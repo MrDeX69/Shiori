@@ -58,18 +58,43 @@ class MangaDexApi {
       String mangaId, {
         String language = 'en',
       }) async {
-    final response = await _client.dio.get(
-      '/manga/$mangaId/feed',
-      queryParameters: {
-        'translatedLanguage[]': [language],
-        'limit': 96,
-        'order[chapter]': 'desc',
-        'includes[]': ['scanlation_group'],
-      },
-    );
+    List<Chapter> allChapters = [];
+    int offset = 0;
+    const int limit = 96;
+    int total = 999;
 
-    final data = response.data['data'] as List;
-    return data.map((e) => _parseChapter(e, mangaId)).toList();
+    while (offset < total) {
+      final response = await _client.dio.get(
+        '/manga/$mangaId/feed',
+        queryParameters: {
+          'translatedLanguage[]': [language],
+          'limit': limit,
+          'offset': offset,
+          'order[chapter]': 'asc',
+          'includes[]': ['scanlation_group'],
+        },
+      );
+
+      total = response.data['total'] as int? ?? 0;
+      final data = response.data['data'] as List;
+      if (data.isEmpty) break;
+
+      allChapters.addAll(data.map((e) => _parseChapter(e, mangaId)));
+      offset += limit;
+    }
+
+    // Dedupliciraj po broju chaptera — zadrži prvi (najpopularniji scan group)
+    final seen = <String>{};
+    final deduped = <Chapter>[];
+    for (final chapter in allChapters) {
+      final key = chapter.chapterNumber?.toString() ?? chapter.id;
+      if (!seen.contains(key)) {
+        seen.add(key);
+        deduped.add(chapter);
+      }
+    }
+
+    return deduped;
   }
 
   Future<List<String>> getPageUrls(String chapterId) async {
@@ -79,9 +104,7 @@ class MangaDexApi {
     final hash = response.data['chapter']['hash'];
     final pages = response.data['chapter']['data'] as List;
 
-    return pages
-        .map((page) => '$baseUrl/data/$hash/$page')
-        .toList();
+    return pages.map((page) => '$baseUrl/data/$hash/$page').toList();
   }
 
   Manga _parseManga(Map<String, dynamic> data) {

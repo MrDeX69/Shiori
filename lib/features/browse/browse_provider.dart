@@ -11,7 +11,10 @@ final trendingMangaProvider = FutureProvider<List<Manga>>((ref) async {
 
   if (query.isEmpty) {
     return api.getTrendingManga();
-  } else {
-    return api.searchManga(query);
   }
+
+  // Debounce 600ms
+  await Future.delayed(const Duration(milliseconds: 600));
+
+  return api.searchManga(query);
 });

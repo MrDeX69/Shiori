@@ -50,6 +50,18 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
     }
   }
 
+  String _chapterLabel(ChapterProgressTableData item) {
+    if (item.chapterNumber != null && item.chapterNumber!.isNotEmpty) {
+      return 'Chapter ${item.chapterNumber}';
+    }
+    return 'Unknown Chapter';
+  }
+
+  String _pageLabel(ChapterProgressTableData item) {
+    if (item.isRead) return 'Completed';
+    return 'Page ${item.lastPage + 1}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -87,8 +99,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(context, true),
-                          child: Text('Clear',
-                              style: TextStyle(color: accent)),
+                          child:
+                          Text('Clear', style: TextStyle(color: accent)),
                         ),
                       ],
                     ),
@@ -162,13 +174,24 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    subtitle: Text(
-                      item.chapterNumber != null
-                          ? 'Chapter ${item.chapterNumber} • Page ${item.lastPage + 1}'
-                          : 'Page ${item.lastPage + 1}',
-                      style: TextStyle(
-                          color: cs.onSurface.withOpacity(0.38),
-                          fontSize: 12),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _chapterLabel(item),
+                          style: TextStyle(
+                            color: accent.withOpacity(0.8),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          _pageLabel(item),
+                          style: TextStyle(
+                              color: cs.onSurface.withOpacity(0.38),
+                              fontSize: 11),
+                        ),
+                      ],
                     ),
                     trailing: Icon(Icons.chevron_right,
                         color: cs.onSurface.withOpacity(0.24)),
