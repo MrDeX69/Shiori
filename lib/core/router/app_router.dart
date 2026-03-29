@@ -37,6 +37,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/downloads',
             builder: (context, state) => const DownloadsScreen(),
           ),
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) => const SettingsScreen(),
+          ),
         ],
       ),
       GoRoute(
@@ -55,10 +59,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return ReaderScreen(chapter: chapter, manga: manga);
         },
       ),
-      GoRoute(
-        path: '/settings',
-        builder: (context, state) => const SettingsScreen(),
-      ),
     ],
   );
 });
@@ -72,7 +72,13 @@ class MainShell extends ConsumerWidget {
     final location = GoRouterState.of(context).uri.toString();
     final accent = ref.watch(accentColorProvider);
     final themeMode = ref.watch(themeModeProvider);
-    final locations = ['/library', '/browse', '/history', '/downloads'];
+    final locations = [
+      '/library',
+      '/browse',
+      '/history',
+      '/downloads',
+      '/settings',
+    ];
 
     int currentIndex = 0;
     for (int i = 0; i < locations.length; i++) {
@@ -84,17 +90,17 @@ class MainShell extends ConsumerWidget {
 
     final isLight = themeMode == AppThemeMode.light;
     final navBgColor = isLight
-        ? Colors.white.withOpacity(0.85)
-        : const Color(0xFF12121A).withOpacity(0.85);
+        ? Colors.white.withOpacity(0.9)
+        : const Color(0xFF12121A).withOpacity(0.9);
     final borderColor = isLight
         ? Colors.black.withOpacity(0.08)
-        : Colors.white.withOpacity(0.08);
+        : Colors.white.withOpacity(0.06);
     final unselectedColor = isLight
         ? const Color(0xFF999999)
-        : const Color(0xFF666677);
+        : const Color(0xFF555566);
 
     return Scaffold(
-      extendBody: false,
+      extendBody: true,
       body: child,
       bottomNavigationBar: ClipRRect(
         borderRadius: const BorderRadius.only(
@@ -111,24 +117,25 @@ class MainShell extends ConsumerWidget {
                 topRight: Radius.circular(24),
               ),
               border: Border(
-                top: BorderSide(
-                  color: borderColor,
-                  width: 0.5,
-                ),
+                top: BorderSide(color: borderColor, width: 0.5),
               ),
             ),
             child: NavigationBar(
               selectedIndex: currentIndex,
-              onDestinationSelected: (index) => context.go(locations[index]),
+              onDestinationSelected: (index) =>
+                  context.go(locations[index]),
               backgroundColor: Colors.transparent,
               elevation: 0,
               indicatorColor: accent.withOpacity(0.15),
+              // Nikad ne pokazujemo labele — ikone su dovoljne za 5 tabova
+              labelBehavior:
+              NavigationDestinationLabelBehavior.alwaysHide,
               destinations: [
                 NavigationDestination(
                   icon: Icon(Icons.collections_bookmark_outlined,
                       color: unselectedColor),
-                  selectedIcon: Icon(Icons.collections_bookmark,
-                      color: accent),
+                  selectedIcon:
+                  Icon(Icons.collections_bookmark, color: accent),
                   label: 'Library',
                 ),
                 NavigationDestination(
@@ -148,6 +155,12 @@ class MainShell extends ConsumerWidget {
                       color: unselectedColor),
                   selectedIcon: Icon(Icons.download, color: accent),
                   label: 'Downloads',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.settings_outlined,
+                      color: unselectedColor),
+                  selectedIcon: Icon(Icons.settings, color: accent),
+                  label: 'Settings',
                 ),
               ],
             ),
