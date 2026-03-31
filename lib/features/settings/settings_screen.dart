@@ -6,21 +6,21 @@ import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_theme.dart';
+import '../statistics/statistics_screen.dart';
 
-final hapticEnabledProvider =
-StateNotifierProvider<BoolSettingNotifier, bool>(
-      (ref) => BoolSettingNotifier('haptic_enabled', true),
+final hapticEnabledProvider = StateNotifierProvider<BoolSettingNotifier, bool>(
+  (ref) => BoolSettingNotifier('haptic_enabled', true),
 );
 
 final incognitoEnabledProvider =
-StateNotifierProvider<BoolSettingNotifier, bool>(
+    StateNotifierProvider<BoolSettingNotifier, bool>(
       (ref) => BoolSettingNotifier('incognito_enabled', false),
-);
+    );
 
 final biometricEnabledProvider =
-StateNotifierProvider<BoolSettingNotifier, bool>(
+    StateNotifierProvider<BoolSettingNotifier, bool>(
       (ref) => BoolSettingNotifier('biometric_enabled', false),
-);
+    );
 
 class BoolSettingNotifier extends StateNotifier<bool> {
   final String key;
@@ -59,10 +59,8 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
         behavior: SnackBarBehavior.floating,
-        backgroundColor:
-        isDark ? const Color(0xFF1C1C28) : Colors.white,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+        backgroundColor: isDark ? const Color(0xFF1C1C28) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -73,10 +71,10 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _toggleBiometric(
-      BuildContext context,
-      WidgetRef ref,
-      bool currentValue,
-      ) async {
+    BuildContext context,
+    WidgetRef ref,
+    bool currentValue,
+  ) async {
     try {
       final canCheck = await _localAuth.canCheckBiometrics;
       final isDeviceSupported = await _localAuth.isDeviceSupported();
@@ -96,9 +94,7 @@ class SettingsScreen extends ConsumerWidget {
         ),
       );
       if (authenticated) {
-        await ref
-            .read(biometricEnabledProvider.notifier)
-            .toggle(!currentValue);
+        await ref.read(biometricEnabledProvider.notifier).toggle(!currentValue);
       }
     } catch (e) {
       if (context.mounted) {
@@ -111,9 +107,7 @@ class SettingsScreen extends ConsumerWidget {
     final accent = ref.read(accentColorProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final sheetBg = isDark ? const Color(0xFF12121A) : Colors.white;
-    final itemBg = isDark
-        ? const Color(0xFF1C1C28)
-        : const Color(0xFFF0F0F5);
+    final itemBg = isDark ? const Color(0xFF1C1C28) : const Color(0xFFF0F0F5);
     final textColor = isDark ? Colors.white70 : Colors.black87;
     final handleColor = isDark ? Colors.white24 : Colors.black12;
 
@@ -141,12 +135,15 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Text('Theme',
-                      style: TextStyle(
-                          color: accent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5)),
+                  Text(
+                    'Theme',
+                    style: TextStyle(
+                      color: accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   ...AppThemeMode.values.map((mode) {
                     final isSelected = mode == currentMode;
@@ -157,38 +154,36 @@ class SettingsScreen extends ConsumerWidget {
                     };
                     final icon = switch (mode) {
                       AppThemeMode.dark => Icons.dark_mode_outlined,
-                      AppThemeMode.amoled =>
-                      Icons.brightness_2_outlined,
-                      AppThemeMode.light =>
-                      Icons.light_mode_outlined,
+                      AppThemeMode.amoled => Icons.brightness_2_outlined,
+                      AppThemeMode.light => Icons.light_mode_outlined,
                     };
                     final desc = switch (mode) {
                       AppThemeMode.dark => 'Deep dark background',
                       AppThemeMode.amoled =>
-                      'Pure black — saves battery on OLED',
+                        'Pure black — saves battery on OLED',
                       AppThemeMode.light => 'Light background',
                     };
                     return GestureDetector(
                       onTap: () {
                         HapticFeedback.selectionClick();
-                        ref
-                            .read(themeModeProvider.notifier)
-                            .setTheme(mode);
+                        ref.read(themeModeProvider.notifier).setTheme(mode);
                         setSheet(() {});
                         Navigator.pop(ctx);
                       },
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? accent.withOpacity(0.15)
+                              ? accent.withValues(alpha: 0.15)
                               : itemBg,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSelected
-                                ? accent.withOpacity(0.5)
+                                ? accent.withValues(alpha: 0.5)
                                 : Colors.transparent,
                           ),
                         ),
@@ -199,48 +194,49 @@ class SettingsScreen extends ConsumerWidget {
                               height: 40,
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? accent.withOpacity(0.2)
+                                    ? accent.withValues(alpha: 0.2)
                                     : (isDark
-                                    ? Colors.white10
-                                    : Colors.black
-                                    .withOpacity(0.06)),
-                                borderRadius:
-                                BorderRadius.circular(10),
+                                          ? Colors.white10
+                                          : Colors.black.withValues(
+                                              alpha: 0.06,
+                                            )),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Icon(icon,
-                                  color: isSelected
-                                      ? accent
-                                      : textColor.withOpacity(0.6),
-                                  size: 20),
+                              child: Icon(
+                                icon,
+                                color: isSelected
+                                    ? accent
+                                    : textColor.withValues(alpha: 0.6),
+                                size: 20,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(label,
-                                      style: TextStyle(
-                                        color: isSelected
-                                            ? accent
-                                            : textColor,
-                                        fontSize: 14,
-                                        fontWeight: isSelected
-                                            ? FontWeight.w600
-                                            : FontWeight.normal,
-                                      )),
-                                  Text(desc,
-                                      style: TextStyle(
-                                        color:
-                                        textColor.withOpacity(0.4),
-                                        fontSize: 11,
-                                      )),
+                                  Text(
+                                    label,
+                                    style: TextStyle(
+                                      color: isSelected ? accent : textColor,
+                                      fontSize: 14,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
+                                  Text(
+                                    desc,
+                                    style: TextStyle(
+                                      color: textColor.withValues(alpha: 0.4),
+                                      fontSize: 11,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
                             if (isSelected)
-                              Icon(Icons.check_circle,
-                                  color: accent, size: 18),
+                              Icon(Icons.check_circle, color: accent, size: 18),
                           ],
                         ),
                       ),
@@ -284,19 +280,21 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Text('Accent Color',
-                      style: TextStyle(
-                          color: currentAccent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5)),
+                  Text(
+                    'Accent Color',
+                    style: TextStyle(
+                      color: currentAccent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                   const SizedBox(height: 28),
                   Wrap(
                     spacing: 20,
                     runSpacing: 20,
                     alignment: WrapAlignment.center,
-                    children:
-                    AccentColorNotifier.presets.map((color) {
+                    children: AccentColorNotifier.presets.map((color) {
                       final isSelected = currentAccent == color;
                       return GestureDetector(
                         onTap: () {
@@ -315,22 +313,25 @@ class SettingsScreen extends ConsumerWidget {
                             color: color,
                             shape: BoxShape.circle,
                             border: isSelected
-                                ? Border.all(
-                                color: Colors.white, width: 3)
+                                ? Border.all(color: Colors.white, width: 3)
                                 : Border.all(
-                                color: Colors.transparent,
-                                width: 3),
+                                    color: Colors.transparent,
+                                    width: 3,
+                                  ),
                             boxShadow: [
                               BoxShadow(
-                                color: color.withOpacity(0.5),
+                                color: color.withValues(alpha: 0.5),
                                 blurRadius: isSelected ? 20 : 6,
                                 spreadRadius: isSelected ? 3 : 0,
                               ),
                             ],
                           ),
                           child: isSelected
-                              ? const Icon(Icons.check,
-                              color: Colors.white, size: 28)
+                              ? const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 28,
+                                )
                               : null,
                         ),
                       );
@@ -366,10 +367,7 @@ class SettingsScreen extends ConsumerWidget {
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: SafeArea(
-              bottom: false,
-              child: const SizedBox(height: 16),
-            ),
+            child: SafeArea(bottom: false, child: const SizedBox(height: 16)),
           ),
           SliverToBoxAdapter(
             child: Container(
@@ -380,13 +378,15 @@ class SettingsScreen extends ConsumerWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    accent.withOpacity(0.2),
-                    accent.withOpacity(0.05),
+                    accent.withValues(alpha: 0.2),
+                    accent.withValues(alpha: 0.05),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                    color: accent.withOpacity(0.3), width: 1),
+                  color: accent.withValues(alpha: 0.3),
+                  width: 1,
+                ),
               ),
               child: Row(
                 children: [
@@ -398,45 +398,60 @@ class SettingsScreen extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(14),
                       boxShadow: [
                         BoxShadow(
-                            color: accent.withOpacity(0.4),
-                            blurRadius: 12,
-                            spreadRadius: 1),
+                          color: accent.withValues(alpha: 0.4),
+                          blurRadius: 12,
+                          spreadRadius: 1,
+                        ),
                       ],
                     ),
                     child: const Center(
-                      child: Text('栞',
-                          style: TextStyle(
-                              fontSize: 28,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
+                      child: Text(
+                        '栞',
+                        style: TextStyle(
+                          fontSize: 28,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Shiori',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold)),
-                      Text('Version 1.0.1',
-                          style: TextStyle(
-                              color: cs.onSurface.withOpacity(0.38),
-                              fontSize: 13)),
+                      const Text(
+                        'Shiori',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Version 1.0.1',
+                        style: TextStyle(
+                          color: cs.onSurface.withValues(alpha: 0.38),
+                          fontSize: 13,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
-                          color: accent.withOpacity(0.2),
+                          color: accent.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text('Premium',
-                            style: TextStyle(
-                                color: accent,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700)),
+                        child: Text(
+                          'Premium',
+                          style: TextStyle(
+                            color: accent,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -471,8 +486,9 @@ class SettingsScreen extends ConsumerWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                          color: accent.withOpacity(0.5),
-                          blurRadius: 8)
+                        color: accent.withValues(alpha: 0.5),
+                        blurRadius: 8,
+                      ),
                     ],
                   ),
                 ),
@@ -488,10 +504,9 @@ class SettingsScreen extends ConsumerWidget {
                 isDark: isDark,
                 trailing: Switch(
                   value: hapticEnabled,
-                  onChanged: (val) => ref
-                      .read(hapticEnabledProvider.notifier)
-                      .toggle(val),
-                  activeColor: accent,
+                  onChanged: (val) =>
+                      ref.read(hapticEnabledProvider.notifier).toggle(val),
+                  activeThumbColor: accent,
                 ),
                 onTap: () => ref
                     .read(hapticEnabledProvider.notifier)
@@ -511,10 +526,9 @@ class SettingsScreen extends ConsumerWidget {
                   value: biometricEnabled,
                   onChanged: (_) =>
                       _toggleBiometric(context, ref, biometricEnabled),
-                  activeColor: accent,
+                  activeThumbColor: accent,
                 ),
-                onTap: () =>
-                    _toggleBiometric(context, ref, biometricEnabled),
+                onTap: () => _toggleBiometric(context, ref, biometricEnabled),
               ),
               _tile(
                 icon: Icons.visibility_off_outlined,
@@ -528,20 +542,16 @@ class SettingsScreen extends ConsumerWidget {
                 trailing: Switch(
                   value: incognitoEnabled,
                   onChanged: (val) {
-                    ref
-                        .read(incognitoEnabledProvider.notifier)
-                        .toggle(val);
+                    ref.read(incognitoEnabledProvider.notifier).toggle(val);
                     HapticFeedback.lightImpact();
                     if (context.mounted) {
                       _showSnackBar(
                         context,
-                        val
-                            ? 'Incognito enabled'
-                            : 'Incognito disabled',
+                        val ? 'Incognito enabled' : 'Incognito disabled',
                       );
                     }
                   },
-                  activeColor: accent,
+                  activeThumbColor: accent,
                 ),
                 onTap: () {},
               ),
@@ -564,13 +574,23 @@ class SettingsScreen extends ConsumerWidget {
                 cs: cs,
                 isDark: isDark,
                 onTap: () async {
-                  final uri =
-                  Uri.parse('https://github.com/MrDeX69/Shiori');
+                  final uri = Uri.parse('https://github.com/MrDeX69/Shiori');
                   if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri,
-                        mode: LaunchMode.externalApplication);
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
                   }
                 },
+              ),
+              _tile(
+                icon: Icons.bar_chart_outlined,
+                title: 'Statistics',
+                subtitle: 'Reading activity & insights',
+                accent: accent,
+                cs: cs,
+                isDark: isDark,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const StatisticsScreen()),
+                ),
               ),
               _tile(
                 icon: Icons.gavel_outlined,
@@ -581,10 +601,10 @@ class SettingsScreen extends ConsumerWidget {
                 isDark: isDark,
                 onTap: () async {
                   final uri = Uri.parse(
-                      'https://github.com/MrDeX69/Shiori/blob/main/LICENSE');
+                    'https://github.com/MrDeX69/Shiori/blob/main/LICENSE',
+                  );
                   if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri,
-                        mode: LaunchMode.externalApplication);
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
                   }
                 },
               ),
@@ -624,23 +644,20 @@ class SettingsScreen extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Material(
-        color: isDark
-            ? const Color(0xFF1C1C28)
-            : cs.surfaceContainerHighest,
+        color: isDark ? const Color(0xFF1C1C28) : cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(14),
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
                 Container(
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: accent.withOpacity(0.15),
+                    color: accent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(icon, color: accent, size: 20),
@@ -650,22 +667,30 @@ class SettingsScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title,
-                          style: TextStyle(
-                              color: cs.onSurface,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500)),
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: cs.onSurface,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text(subtitle,
-                          style: TextStyle(
-                              color: cs.onSurface.withOpacity(0.38),
-                              fontSize: 12)),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: cs.onSurface.withValues(alpha: 0.38),
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 trailing ??
-                    Icon(Icons.chevron_right,
-                        color: cs.onSurface.withOpacity(0.24)),
+                    Icon(
+                      Icons.chevron_right,
+                      color: cs.onSurface.withValues(alpha: 0.24),
+                    ),
               ],
             ),
           ),

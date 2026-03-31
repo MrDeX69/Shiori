@@ -10,7 +10,6 @@ class DownloadsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final accent = ref.watch(accentColorProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: CustomScrollView(
@@ -28,46 +27,46 @@ class DownloadsScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            color: accent.withOpacity(0.08),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        Container(
-                          width: 76,
-                          height: 76,
-                          decoration: BoxDecoration(
-                            color: accent.withOpacity(0.15),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: accent.withOpacity(0.25),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.download_outlined,
-                            size: 28,
-                            color: accent,
-                          ),
-                        ),
-                      ],
-                    )
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                color: accent.withValues(alpha: 0.08),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            Container(
+                              width: 76,
+                              height: 76,
+                              decoration: BoxDecoration(
+                                color: accent.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: accent.withValues(alpha: 0.25),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.download_outlined,
+                                size: 28,
+                                color: accent,
+                              ),
+                            ),
+                          ],
+                        )
                         .animate()
                         .scale(
-                      begin: const Offset(0.8, 0.8),
-                      end: const Offset(1.0, 1.0),
-                      duration: 600.ms,
-                      curve: Curves.elasticOut,
-                    )
+                          begin: const Offset(0.8, 0.8),
+                          end: const Offset(1.0, 1.0),
+                          duration: 600.ms,
+                          curve: Curves.elasticOut,
+                        )
                         .fadeIn(duration: 400.ms),
                     const SizedBox(height: 28),
                     Text(
@@ -83,7 +82,7 @@ class DownloadsScreen extends ConsumerWidget {
                       'Download manga chapters for offline reading — coming in the next update',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: cs.onSurface.withOpacity(0.38),
+                        color: cs.onSurface.withValues(alpha: 0.38),
                         fontSize: 13,
                         height: 1.5,
                       ),
@@ -94,31 +93,50 @@ class DownloadsScreen extends ConsumerWidget {
                       spacing: 8,
                       runSpacing: 8,
                       alignment: WrapAlignment.center,
-                      children: [
-                        _featurePill('Wi-Fi only', Icons.wifi_outlined,
-                            accent),
-                        _featurePill('Background', Icons.downloading_outlined,
-                            accent),
-                        _featurePill('Offline reader',
-                            Icons.menu_book_outlined, accent),
-                        _featurePill('Auto-download',
-                            Icons.schedule_outlined, accent),
-                      ]
-                          .asMap()
-                          .entries
-                          .map((e) => e.value
-                          .animate()
-                          .fadeIn(
-                          delay: Duration(
-                              milliseconds: 300 + e.key * 80),
-                          duration: 300.ms)
-                          .slideY(
-                          begin: 0.3,
-                          end: 0,
-                          delay: Duration(
-                              milliseconds: 300 + e.key * 80),
-                          duration: 300.ms))
-                          .toList(),
+                      children:
+                          [
+                                _featurePill(
+                                  'Wi-Fi only',
+                                  Icons.wifi_outlined,
+                                  accent,
+                                ),
+                                _featurePill(
+                                  'Background',
+                                  Icons.downloading_outlined,
+                                  accent,
+                                ),
+                                _featurePill(
+                                  'Offline reader',
+                                  Icons.menu_book_outlined,
+                                  accent,
+                                ),
+                                _featurePill(
+                                  'Auto-download',
+                                  Icons.schedule_outlined,
+                                  accent,
+                                ),
+                              ]
+                              .asMap()
+                              .entries
+                              .map(
+                                (e) => e.value
+                                    .animate()
+                                    .fadeIn(
+                                      delay: Duration(
+                                        milliseconds: 300 + e.key * 80,
+                                      ),
+                                      duration: 300.ms,
+                                    )
+                                    .slideY(
+                                      begin: 0.3,
+                                      end: 0,
+                                      delay: Duration(
+                                        milliseconds: 300 + e.key * 80,
+                                      ),
+                                      duration: 300.ms,
+                                    ),
+                              )
+                              .toList(),
                     ),
                   ],
                 ),
@@ -134,20 +152,23 @@ class DownloadsScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: accent.withOpacity(0.1),
+        color: accent.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accent.withOpacity(0.3)),
+        border: Border.all(color: accent.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: accent, size: 14),
           const SizedBox(width: 6),
-          Text(label,
-              style: TextStyle(
-                  color: accent,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: TextStyle(
+              color: accent,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );

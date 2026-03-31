@@ -5,8 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/router/app_router.dart';
+import 'core/scroll/shiori_scroll_behavior.dart';
 import 'core/theme/app_theme.dart';
 import 'core/di/injection.dart';
+import 'data/remote/mangadex_source.dart';
+import 'domain/sources/base_source.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/splash/splash_screen.dart';
 
@@ -29,13 +32,13 @@ void main() async {
   );
 
   await configureDependencies();
+
+  // Register built-in MangaDex source. Additional [BaseSource]s register here.
+  SourceRegistry.instance.register(MangaDexSource.instance);
+
   FlutterNativeSplash.remove();
 
-  runApp(
-    const ProviderScope(
-      child: ShioriApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: ShioriApp()));
 }
 
 class ShioriApp extends ConsumerStatefulWidget {
@@ -47,6 +50,8 @@ class ShioriApp extends ConsumerStatefulWidget {
 
 class _ShioriAppState extends ConsumerState<ShioriApp>
     with WidgetsBindingObserver {
+  static const _scrollBehavior = ShioriScrollBehavior();
+
   bool _showSplash = false;
   bool _showOnboarding = false;
   bool _isLocked = false;
@@ -97,9 +102,7 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
         setState(() => _isLocked = true);
       }
     }
-    if (state == AppLifecycleState.resumed &&
-        _isLocked &&
-        !_isAuthenticating) {
+    if (state == AppLifecycleState.resumed && _isLocked && !_isAuthenticating) {
       _authenticate();
     }
   }
@@ -124,9 +127,7 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
         setState(() => _isAuthenticating = false);
       }
     } catch (_) {
-      if (mounted) {
-        setState(() => _isAuthenticating = false);
-      }
+      if (mounted) setState(() => _isAuthenticating = false);
     }
   }
 
@@ -141,15 +142,15 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
     if (!_initialized) {
       return const MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          backgroundColor: Color(0xFF0A0A0F),
-        ),
+        scrollBehavior: _scrollBehavior,
+        home: Scaffold(backgroundColor: Color(0xFF0A0A0F)),
       );
     }
 
     if (_showSplash) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
+        scrollBehavior: _scrollBehavior,
         theme: _buildTheme(),
         home: SplashScreen(
           onComplete: () => setState(() {
@@ -163,6 +164,7 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
     if (_showOnboarding) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
+        scrollBehavior: _scrollBehavior,
         theme: _buildTheme(),
         home: OnboardingScreen(
           onComplete: () => setState(() => _showOnboarding = false),
@@ -173,6 +175,7 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
     if (_isLocked) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
+        scrollBehavior: _scrollBehavior,
         theme: _buildTheme(),
         home: Scaffold(
           backgroundColor: const Color(0xFF0A0A0F),
@@ -190,14 +193,14 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
                       end: Alignment.bottomRight,
                       colors: [
                         ref.watch(accentColorProvider),
-                        ref.watch(accentColorProvider).withOpacity(0.6),
+                        ref.watch(accentColorProvider).withValues(alpha: 0.6),
                       ],
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: ref
                             .watch(accentColorProvider)
-                            .withOpacity(0.4),
+                            .withValues(alpha: 0.4),
                         blurRadius: 30,
                         spreadRadius: 5,
                       ),
@@ -223,19 +226,14 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
                 const SizedBox(height: 8),
                 const Text(
                   'Authenticate to continue',
-                  style: TextStyle(
-                    color: Colors.white54,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white54, fontSize: 14),
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton.icon(
                   onPressed: _isAuthenticating ? null : _authenticate,
                   icon: const Icon(Icons.fingerprint),
                   label: Text(
-                    _isAuthenticating
-                        ? 'Authenticating...'
-                        : 'Authenticate',
+                    _isAuthenticating ? 'Authenticating...' : 'Authenticate',
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ref.watch(accentColorProvider),
@@ -260,6 +258,7 @@ class _ShioriAppState extends ConsumerState<ShioriApp>
     return MaterialApp.router(
       title: 'Shiori',
       debugShowCheckedModeBanner: false,
+      scrollBehavior: _scrollBehavior,
       theme: _buildTheme(),
       routerConfig: router,
     );

@@ -18,10 +18,7 @@ class DioClient {
       ),
     );
 
-    dio.interceptors.addAll([
-      _LogInterceptor(),
-      _RetryInterceptor(dio),
-    ]);
+    dio.interceptors.addAll([_LogInterceptor(), _RetryInterceptor(dio)]);
   }
 }
 

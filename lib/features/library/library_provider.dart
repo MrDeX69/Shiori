@@ -5,18 +5,44 @@ import '../../core/di/injection.dart';
 import '../../data/local/app_database.dart';
 import '../../domain/models/manga.dart';
 
+// ── Library stream ────────────────────────────────────────────────────────────
+
 final libraryProvider = StreamProvider<List<Manga>>((ref) {
   final db = getIt<AppDatabase>();
-  return db.select(db.mangaTable).watch().map(
-        (rows) => rows.map((row) => _rowToManga(row)).toList(),
-  );
+  return db
+      .select(db.mangaTable)
+      .watch()
+      .map((rows) => rows.map(_rowToManga).toList());
 });
 
-final isMangaInLibraryProvider =
-FutureProvider.family<bool, String>((ref, mangaId) async {
+// ── Library checks ────────────────────────────────────────────────────────────
+
+final isMangaInLibraryProvider = FutureProvider.family<bool, String>((
+    ref,
+    mangaId,
+    ) async {
   final db = getIt<AppDatabase>();
   return db.isMangaInLibrary(mangaId);
 });
+
+// ── Unread count provider ─────────────────────────────────────────────────────
+// Returns the number of chapters that are NOT yet read for a given manga.
+// Uses only local DB — no network call.
+// Invalidated automatically when `chaptersProvider` or markChapterRead fires.
+final unreadCountProvider = FutureProvider.family<int, String>((
+    ref,
+    mangaId,
+    ) async {
+  final db = getIt<AppDatabase>();
+  // Total chapters stored locally from last fetch
+  final totalStored = await db.getStoredChapterCount(mangaId);
+  // Chapters marked read
+  final readIds = await db.getReadChapterIds(mangaId);
+  // Unread = total - read (floor at 0)
+  return (totalStored - readIds.length).clamp(0, totalStored);
+});
+
+// ── Mutations ─────────────────────────────────────────────────────────────────
 
 Future<void> addToLibrary(Manga manga) async {
   final db = getIt<AppDatabase>();
@@ -80,10 +106,11 @@ Future<void> markChapterAsRead(
   );
 }
 
+// ── Row mapper ────────────────────────────────────────────────────────────────
+
 Manga _rowToManga(MangaTableData row) {
   List<String> tags = [];
   List<String> authors = [];
-
   try {
     tags = List<String>.from(jsonDecode(row.tags));
     authors = List<String>.from(jsonDecode(row.authors));

@@ -4,14 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // Theme mode provider
 final themeModeProvider =
-StateNotifierProvider<ThemeModeNotifier, AppThemeMode>(
+    StateNotifierProvider<ThemeModeNotifier, AppThemeMode>(
       (ref) => ThemeModeNotifier(),
-);
+    );
 
 // Accent color provider
-final accentColorProvider =
-StateNotifierProvider<AccentColorNotifier, Color>(
-      (ref) => AccentColorNotifier(),
+final accentColorProvider = StateNotifierProvider<AccentColorNotifier, Color>(
+  (ref) => AccentColorNotifier(),
 );
 
 enum AppThemeMode { dark, amoled, light }
@@ -51,13 +50,13 @@ class AccentColorNotifier extends StateNotifier<Color> {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     final colorValue =
-        prefs.getInt('accent_color') ?? const Color(0xFFE85D75).value;
+        prefs.getInt('accent_color') ?? const Color(0xFFE85D75).toARGB32();
     state = Color(colorValue);
   }
 
   Future<void> setColor(Color color) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('accent_color', color.value);
+    await prefs.setInt('accent_color', color.toARGB32());
     state = color;
   }
 }
@@ -111,9 +110,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: surface,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -158,9 +155,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: surface,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -205,9 +200,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: surface,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {

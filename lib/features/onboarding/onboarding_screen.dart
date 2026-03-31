@@ -19,28 +19,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       icon: Icons.explore_outlined,
       title: 'Discover Manga',
       description:
-      'Browse thousands of manga titles from MangaDex. Search by title, genre, or discover what\'s trending.',
+          'Browse thousands of manga titles from MangaDex. Search by title, genre, or discover what\'s trending.',
       color: const Color(0xFFE85D75),
     ),
     _OnboardingPage(
       icon: Icons.collections_bookmark_outlined,
       title: 'Build Your Library',
       description:
-      'Save your favourite manga to your personal library and track your reading progress.',
+          'Save your favourite manga to your personal library and track your reading progress.',
       color: const Color(0xFF5D7BE8),
     ),
     _OnboardingPage(
       icon: Icons.menu_book_outlined,
       title: 'Read Your Way',
       description:
-      'Enjoy manga in Right-to-Left, Left-to-Right, or Webtoon mode. Your reading, your rules.',
+          'Enjoy manga in Right-to-Left, Left-to-Right, or Webtoon mode. Your reading, your rules.',
       color: const Color(0xFF5DE87B),
     ),
     _OnboardingPage(
       icon: Icons.lock_outlined,
       title: 'Private & Secure',
       description:
-      'Protect your reading history with biometric lock and incognito mode.',
+          'Protect your reading history with biometric lock and incognito mode.',
       color: const Color(0xFFE8C45D),
     ),
   ];
@@ -75,29 +75,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: page.color.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: page.color.withOpacity(0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: Icon(
-                        page.icon,
-                        size: 56,
-                        color: page.color,
-                      ),
-                    )
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: page.color.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: page.color.withValues(alpha: 0.3),
+                              width: 2,
+                            ),
+                          ),
+                          child: Icon(page.icon, size: 56, color: page.color),
+                        )
                         .animate()
                         .scale(
-                      begin: const Offset(0.5, 0.5),
-                      end: const Offset(1.0, 1.0),
-                      duration: 500.ms,
-                      curve: Curves.elasticOut,
-                    )
+                          begin: const Offset(0.5, 0.5),
+                          end: const Offset(1.0, 1.0),
+                          duration: 500.ms,
+                          curve: Curves.elasticOut,
+                        )
                         .fadeIn(duration: 300.ms),
                     const SizedBox(height: 48),
                     Text(
@@ -135,7 +131,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
                     _pages.length,
-                        (index) => AnimatedContainer(
+                    (index) => AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       margin: const EdgeInsets.symmetric(horizontal: 4),
                       width: _currentPage == index ? 24 : 8,
@@ -172,9 +168,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
                     child: Text(
-                      _currentPage < _pages.length - 1
-                          ? 'Next'
-                          : 'Get Started',
+                      _currentPage < _pages.length - 1 ? 'Next' : 'Get Started',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -188,10 +182,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: _complete,
                     child: const Text(
                       'Skip',
-                      style: TextStyle(
-                        color: Colors.white38,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.white38, fontSize: 14),
                     ),
                   ),
                 ],

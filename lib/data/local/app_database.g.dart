@@ -1218,12 +1218,293 @@ class ChapterProgressTableCompanion
   }
 }
 
+class $LocalChapterTableTable extends LocalChapterTable
+    with TableInfo<$LocalChapterTableTable, LocalChapterTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalChapterTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _chapterIdMeta = const VerificationMeta(
+    'chapterId',
+  );
+  @override
+  late final GeneratedColumn<String> chapterId = GeneratedColumn<String>(
+    'chapter_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mangaIdMeta = const VerificationMeta(
+    'mangaId',
+  );
+  @override
+  late final GeneratedColumn<String> mangaId = GeneratedColumn<String>(
+    'manga_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _chapterNumberMeta = const VerificationMeta(
+    'chapterNumber',
+  );
+  @override
+  late final GeneratedColumn<String> chapterNumber = GeneratedColumn<String>(
+    'chapter_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [chapterId, mangaId, chapterNumber];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_chapter_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalChapterTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('chapter_id')) {
+      context.handle(
+        _chapterIdMeta,
+        chapterId.isAcceptableOrUnknown(data['chapter_id']!, _chapterIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chapterIdMeta);
+    }
+    if (data.containsKey('manga_id')) {
+      context.handle(
+        _mangaIdMeta,
+        mangaId.isAcceptableOrUnknown(data['manga_id']!, _mangaIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mangaIdMeta);
+    }
+    if (data.containsKey('chapter_number')) {
+      context.handle(
+        _chapterNumberMeta,
+        chapterNumber.isAcceptableOrUnknown(
+          data['chapter_number']!,
+          _chapterNumberMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {chapterId};
+  @override
+  LocalChapterTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalChapterTableData(
+      chapterId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chapter_id'],
+      )!,
+      mangaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manga_id'],
+      )!,
+      chapterNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chapter_number'],
+      ),
+    );
+  }
+
+  @override
+  $LocalChapterTableTable createAlias(String alias) {
+    return $LocalChapterTableTable(attachedDatabase, alias);
+  }
+}
+
+class LocalChapterTableData extends DataClass
+    implements Insertable<LocalChapterTableData> {
+  final String chapterId;
+  final String mangaId;
+  final String? chapterNumber;
+  const LocalChapterTableData({
+    required this.chapterId,
+    required this.mangaId,
+    this.chapterNumber,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['chapter_id'] = Variable<String>(chapterId);
+    map['manga_id'] = Variable<String>(mangaId);
+    if (!nullToAbsent || chapterNumber != null) {
+      map['chapter_number'] = Variable<String>(chapterNumber);
+    }
+    return map;
+  }
+
+  LocalChapterTableCompanion toCompanion(bool nullToAbsent) {
+    return LocalChapterTableCompanion(
+      chapterId: Value(chapterId),
+      mangaId: Value(mangaId),
+      chapterNumber: chapterNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chapterNumber),
+    );
+  }
+
+  factory LocalChapterTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalChapterTableData(
+      chapterId: serializer.fromJson<String>(json['chapterId']),
+      mangaId: serializer.fromJson<String>(json['mangaId']),
+      chapterNumber: serializer.fromJson<String?>(json['chapterNumber']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'chapterId': serializer.toJson<String>(chapterId),
+      'mangaId': serializer.toJson<String>(mangaId),
+      'chapterNumber': serializer.toJson<String?>(chapterNumber),
+    };
+  }
+
+  LocalChapterTableData copyWith({
+    String? chapterId,
+    String? mangaId,
+    Value<String?> chapterNumber = const Value.absent(),
+  }) => LocalChapterTableData(
+    chapterId: chapterId ?? this.chapterId,
+    mangaId: mangaId ?? this.mangaId,
+    chapterNumber: chapterNumber.present
+        ? chapterNumber.value
+        : this.chapterNumber,
+  );
+  LocalChapterTableData copyWithCompanion(LocalChapterTableCompanion data) {
+    return LocalChapterTableData(
+      chapterId: data.chapterId.present ? data.chapterId.value : this.chapterId,
+      mangaId: data.mangaId.present ? data.mangaId.value : this.mangaId,
+      chapterNumber: data.chapterNumber.present
+          ? data.chapterNumber.value
+          : this.chapterNumber,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalChapterTableData(')
+          ..write('chapterId: $chapterId, ')
+          ..write('mangaId: $mangaId, ')
+          ..write('chapterNumber: $chapterNumber')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(chapterId, mangaId, chapterNumber);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalChapterTableData &&
+          other.chapterId == this.chapterId &&
+          other.mangaId == this.mangaId &&
+          other.chapterNumber == this.chapterNumber);
+}
+
+class LocalChapterTableCompanion
+    extends UpdateCompanion<LocalChapterTableData> {
+  final Value<String> chapterId;
+  final Value<String> mangaId;
+  final Value<String?> chapterNumber;
+  final Value<int> rowid;
+  const LocalChapterTableCompanion({
+    this.chapterId = const Value.absent(),
+    this.mangaId = const Value.absent(),
+    this.chapterNumber = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalChapterTableCompanion.insert({
+    required String chapterId,
+    required String mangaId,
+    this.chapterNumber = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : chapterId = Value(chapterId),
+       mangaId = Value(mangaId);
+  static Insertable<LocalChapterTableData> custom({
+    Expression<String>? chapterId,
+    Expression<String>? mangaId,
+    Expression<String>? chapterNumber,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (chapterId != null) 'chapter_id': chapterId,
+      if (mangaId != null) 'manga_id': mangaId,
+      if (chapterNumber != null) 'chapter_number': chapterNumber,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalChapterTableCompanion copyWith({
+    Value<String>? chapterId,
+    Value<String>? mangaId,
+    Value<String?>? chapterNumber,
+    Value<int>? rowid,
+  }) {
+    return LocalChapterTableCompanion(
+      chapterId: chapterId ?? this.chapterId,
+      mangaId: mangaId ?? this.mangaId,
+      chapterNumber: chapterNumber ?? this.chapterNumber,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (chapterId.present) {
+      map['chapter_id'] = Variable<String>(chapterId.value);
+    }
+    if (mangaId.present) {
+      map['manga_id'] = Variable<String>(mangaId.value);
+    }
+    if (chapterNumber.present) {
+      map['chapter_number'] = Variable<String>(chapterNumber.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalChapterTableCompanion(')
+          ..write('chapterId: $chapterId, ')
+          ..write('mangaId: $mangaId, ')
+          ..write('chapterNumber: $chapterNumber, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $MangaTableTable mangaTable = $MangaTableTable(this);
   late final $ChapterProgressTableTable chapterProgressTable =
       $ChapterProgressTableTable(this);
+  late final $LocalChapterTableTable localChapterTable =
+      $LocalChapterTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1231,6 +1512,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     mangaTable,
     chapterProgressTable,
+    localChapterTable,
   ];
 }
 
@@ -1837,6 +2119,183 @@ typedef $$ChapterProgressTableTableProcessedTableManager =
       ChapterProgressTableData,
       PrefetchHooks Function()
     >;
+typedef $$LocalChapterTableTableCreateCompanionBuilder =
+    LocalChapterTableCompanion Function({
+      required String chapterId,
+      required String mangaId,
+      Value<String?> chapterNumber,
+      Value<int> rowid,
+    });
+typedef $$LocalChapterTableTableUpdateCompanionBuilder =
+    LocalChapterTableCompanion Function({
+      Value<String> chapterId,
+      Value<String> mangaId,
+      Value<String?> chapterNumber,
+      Value<int> rowid,
+    });
+
+class $$LocalChapterTableTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalChapterTableTable> {
+  $$LocalChapterTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get chapterId => $composableBuilder(
+    column: $table.chapterId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mangaId => $composableBuilder(
+    column: $table.mangaId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chapterNumber => $composableBuilder(
+    column: $table.chapterNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalChapterTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalChapterTableTable> {
+  $$LocalChapterTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get chapterId => $composableBuilder(
+    column: $table.chapterId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mangaId => $composableBuilder(
+    column: $table.mangaId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chapterNumber => $composableBuilder(
+    column: $table.chapterNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalChapterTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalChapterTableTable> {
+  $$LocalChapterTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get chapterId =>
+      $composableBuilder(column: $table.chapterId, builder: (column) => column);
+
+  GeneratedColumn<String> get mangaId =>
+      $composableBuilder(column: $table.mangaId, builder: (column) => column);
+
+  GeneratedColumn<String> get chapterNumber => $composableBuilder(
+    column: $table.chapterNumber,
+    builder: (column) => column,
+  );
+}
+
+class $$LocalChapterTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalChapterTableTable,
+          LocalChapterTableData,
+          $$LocalChapterTableTableFilterComposer,
+          $$LocalChapterTableTableOrderingComposer,
+          $$LocalChapterTableTableAnnotationComposer,
+          $$LocalChapterTableTableCreateCompanionBuilder,
+          $$LocalChapterTableTableUpdateCompanionBuilder,
+          (
+            LocalChapterTableData,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalChapterTableTable,
+              LocalChapterTableData
+            >,
+          ),
+          LocalChapterTableData,
+          PrefetchHooks Function()
+        > {
+  $$LocalChapterTableTableTableManager(
+    _$AppDatabase db,
+    $LocalChapterTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalChapterTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalChapterTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LocalChapterTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> chapterId = const Value.absent(),
+                Value<String> mangaId = const Value.absent(),
+                Value<String?> chapterNumber = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalChapterTableCompanion(
+                chapterId: chapterId,
+                mangaId: mangaId,
+                chapterNumber: chapterNumber,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String chapterId,
+                required String mangaId,
+                Value<String?> chapterNumber = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalChapterTableCompanion.insert(
+                chapterId: chapterId,
+                mangaId: mangaId,
+                chapterNumber: chapterNumber,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalChapterTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalChapterTableTable,
+      LocalChapterTableData,
+      $$LocalChapterTableTableFilterComposer,
+      $$LocalChapterTableTableOrderingComposer,
+      $$LocalChapterTableTableAnnotationComposer,
+      $$LocalChapterTableTableCreateCompanionBuilder,
+      $$LocalChapterTableTableUpdateCompanionBuilder,
+      (
+        LocalChapterTableData,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalChapterTableTable,
+          LocalChapterTableData
+        >,
+      ),
+      LocalChapterTableData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1845,4 +2304,6 @@ class $AppDatabaseManager {
       $$MangaTableTableTableManager(_db, _db.mangaTable);
   $$ChapterProgressTableTableTableManager get chapterProgressTable =>
       $$ChapterProgressTableTableTableManager(_db, _db.chapterProgressTable);
+  $$LocalChapterTableTableTableManager get localChapterTable =>
+      $$LocalChapterTableTableTableManager(_db, _db.localChapterTable);
 }

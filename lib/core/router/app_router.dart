@@ -90,11 +90,11 @@ class MainShell extends ConsumerWidget {
 
     final isLight = themeMode == AppThemeMode.light;
     final navBgColor = isLight
-        ? Colors.white.withOpacity(0.9)
-        : const Color(0xFF12121A).withOpacity(0.9);
+        ? Colors.white.withValues(alpha: 0.9)
+        : const Color(0xFF12121A).withValues(alpha: 0.9);
     final borderColor = isLight
-        ? Colors.black.withOpacity(0.08)
-        : Colors.white.withOpacity(0.06);
+        ? Colors.black.withValues(alpha: 0.08)
+        : Colors.white.withValues(alpha: 0.06);
     final unselectedColor = isLight
         ? const Color(0xFF999999)
         : const Color(0xFF555566);
@@ -116,49 +116,42 @@ class MainShell extends ConsumerWidget {
                 topLeft: Radius.circular(24),
                 topRight: Radius.circular(24),
               ),
-              border: Border(
-                top: BorderSide(color: borderColor, width: 0.5),
-              ),
+              border: Border(top: BorderSide(color: borderColor, width: 0.5)),
             ),
             child: NavigationBar(
               selectedIndex: currentIndex,
-              onDestinationSelected: (index) =>
-                  context.go(locations[index]),
+              onDestinationSelected: (index) => context.go(locations[index]),
               backgroundColor: Colors.transparent,
               elevation: 0,
-              indicatorColor: accent.withOpacity(0.15),
+              indicatorColor: accent.withValues(alpha: 0.15),
               // Nikad ne pokazujemo labele — ikone su dovoljne za 5 tabova
-              labelBehavior:
-              NavigationDestinationLabelBehavior.alwaysHide,
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
               destinations: [
                 NavigationDestination(
-                  icon: Icon(Icons.collections_bookmark_outlined,
-                      color: unselectedColor),
-                  selectedIcon:
-                  Icon(Icons.collections_bookmark, color: accent),
+                  icon: Icon(
+                    Icons.collections_bookmark_outlined,
+                    color: unselectedColor,
+                  ),
+                  selectedIcon: Icon(Icons.collections_bookmark, color: accent),
                   label: 'Library',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.explore_outlined,
-                      color: unselectedColor),
+                  icon: Icon(Icons.explore_outlined, color: unselectedColor),
                   selectedIcon: Icon(Icons.explore, color: accent),
                   label: 'Browse',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.history_outlined,
-                      color: unselectedColor),
+                  icon: Icon(Icons.history_outlined, color: unselectedColor),
                   selectedIcon: Icon(Icons.history, color: accent),
                   label: 'History',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.download_outlined,
-                      color: unselectedColor),
+                  icon: Icon(Icons.download_outlined, color: unselectedColor),
                   selectedIcon: Icon(Icons.download, color: accent),
                   label: 'Downloads',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.settings_outlined,
-                      color: unselectedColor),
+                  icon: Icon(Icons.settings_outlined, color: unselectedColor),
                   selectedIcon: Icon(Icons.settings, color: accent),
                   label: 'Settings',
                 ),

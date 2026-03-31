@@ -55,9 +55,9 @@ class MangaDexApi {
   }
 
   Future<List<Chapter>> getChapters(
-      String mangaId, {
-        String language = 'en',
-      }) async {
+    String mangaId, {
+    String language = 'en',
+  }) async {
     List<Chapter> allChapters = [];
     int offset = 0;
     const int limit = 96;
@@ -83,7 +83,6 @@ class MangaDexApi {
       offset += limit;
     }
 
-    // Dedupliciraj po broju chaptera — zadrži prvi (najpopularniji scan group)
     final seen = <String>{};
     final deduped = <Chapter>[];
     for (final chapter in allChapters) {
@@ -113,14 +112,14 @@ class MangaDexApi {
 
     String? coverUrl;
     final coverRel = relationships.firstWhere(
-          (r) => r['type'] == 'cover_art',
+      (r) => r['type'] == 'cover_art',
       orElse: () => null,
     );
     if (coverRel != null) {
       final fileName = coverRel['attributes']?['fileName'];
       if (fileName != null) {
         coverUrl =
-        'https://uploads.mangadex.org/covers/${data['id']}/$fileName.256.jpg';
+            'https://uploads.mangadex.org/covers/${data['id']}/$fileName.256.jpg';
       }
     }
 
@@ -154,7 +153,8 @@ class MangaDexApi {
 
     return Manga(
       id: data['id'],
-      title: attributes['title']?['en'] ??
+      title:
+          attributes['title']?['en'] ??
           attributes['title']?.values.first ??
           'Unknown',
       description: attributes['description']?['en'],
@@ -170,7 +170,7 @@ class MangaDexApi {
     final relationships = data['relationships'] as List? ?? [];
 
     final groupRel = relationships.firstWhere(
-          (r) => r['type'] == 'scanlation_group',
+      (r) => r['type'] == 'scanlation_group',
       orElse: () => null,
     );
     final groupName = groupRel?['attributes']?['name'];

@@ -21,17 +21,6 @@ class Manga with _$Manga {
   factory Manga.fromJson(Map<String, dynamic> json) => _$MangaFromJson(json);
 }
 
-enum MangaStatus {
-  ongoing,
-  completed,
-  hiatus,
-  cancelled,
-}
+enum MangaStatus { ongoing, completed, hiatus, cancelled }
 
-enum ReadingStatus {
-  reading,
-  planToRead,
-  completed,
-  dropped,
-  onHold,
-}
+enum ReadingStatus { reading, planToRead, completed, dropped, onHold }

@@ -44,35 +44,36 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
               snap: true,
               title: _isSearching
                   ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                style: TextStyle(color: cs.onSurface),
-                decoration: InputDecoration(
-                  hintText: 'Search manga...',
-                  hintStyle: TextStyle(
-                      color: cs.onSurface.withOpacity(0.54)),
-                  border: InputBorder.none,
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                    icon: Icon(Icons.close,
-                        color: cs.onSurface.withOpacity(0.54),
-                        size: 18),
-                    onPressed: () {
-                      _searchController.clear();
-                      ref
-                          .read(searchQueryProvider.notifier)
-                          .state = '';
-                      setState(() {});
-                    },
-                  )
-                      : null,
-                ),
-                onChanged: (value) {
-                  ref.read(searchQueryProvider.notifier).state =
-                      value;
-                  setState(() {});
-                },
-              )
+                      controller: _searchController,
+                      autofocus: true,
+                      style: TextStyle(color: cs.onSurface),
+                      decoration: InputDecoration(
+                        hintText: 'Search manga...',
+                        hintStyle: TextStyle(
+                          color: cs.onSurface.withValues(alpha: 0.54),
+                        ),
+                        border: InputBorder.none,
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: Icon(
+                                  Icons.close,
+                                  color: cs.onSurface.withValues(alpha: 0.54),
+                                  size: 18,
+                                ),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  ref.read(searchQueryProvider.notifier).state =
+                                      '';
+                                  setState(() {});
+                                },
+                              )
+                            : null,
+                      ),
+                      onChanged: (value) {
+                        ref.read(searchQueryProvider.notifier).state = value;
+                        setState(() {});
+                      },
+                    )
                   : const Text('Browse'),
               actions: [
                 IconButton(
@@ -100,7 +101,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                     Text(
                       query.isEmpty ? 'Trending' : 'Results for "$query"',
                       style: TextStyle(
-                        color: cs.onSurface.withOpacity(0.7),
+                        color: cs.onSurface.withValues(alpha: 0.7),
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -128,14 +129,16 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.search_off,
-                              color: cs.onSurface.withOpacity(0.24),
-                              size: 64),
+                          Icon(
+                            Icons.search_off,
+                            color: cs.onSurface.withValues(alpha: 0.24),
+                            size: 64,
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'No results for "$query"',
                             style: TextStyle(
-                              color: cs.onSurface.withOpacity(0.54),
+                              color: cs.onSurface.withValues(alpha: 0.54),
                               fontSize: 16,
                             ),
                           ),
@@ -143,7 +146,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                           Text(
                             'Try a different search term',
                             style: TextStyle(
-                              color: cs.onSurface.withOpacity(0.38),
+                              color: cs.onSurface.withValues(alpha: 0.38),
                               fontSize: 13,
                             ),
                           ),
@@ -156,41 +159,35 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   sliver: SliverGrid(
                     gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      childAspectRatio: 0.65,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                        final manga = mangaList[index];
-                        return MangaCard(
-                          manga: manga,
-                          index: index,
-                          onTap: () => context.push(
-                            '/manga/${manga.id}',
-                            extra: manga,
-                          ),
-                        );
-                      },
-                      childCount: mangaList.length,
-                    ),
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 0.65,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final manga = mangaList[index];
+                      return MangaCard(
+                        manga: manga,
+                        index: index,
+                        onTap: () =>
+                            context.push('/manga/${manga.id}', extra: manga),
+                      );
+                    }, childCount: mangaList.length),
                   ),
                 );
               },
               loading: () => SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 sliver: SliverGrid(
-                  gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     childAspectRatio: 0.65,
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                   ),
                   delegate: SliverChildBuilderDelegate(
-                        (context, index) => const MangaCardShimmer(),
+                    (context, index) => const MangaCardShimmer(),
                     childCount: 12,
                   ),
                 ),
@@ -200,14 +197,16 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.wifi_off_outlined,
-                          color: cs.onSurface.withOpacity(0.24),
-                          size: 64),
+                      Icon(
+                        Icons.wifi_off_outlined,
+                        color: cs.onSurface.withValues(alpha: 0.24),
+                        size: 64,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'No connection',
                         style: TextStyle(
-                          color: cs.onSurface.withOpacity(0.54),
+                          color: cs.onSurface.withValues(alpha: 0.54),
                           fontSize: 16,
                         ),
                       ),
@@ -215,14 +214,13 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                       Text(
                         'Check your internet and try again',
                         style: TextStyle(
-                          color: cs.onSurface.withOpacity(0.38),
+                          color: cs.onSurface.withValues(alpha: 0.38),
                           fontSize: 13,
                         ),
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
-                        onPressed: () =>
-                            ref.invalidate(trendingMangaProvider),
+                        onPressed: () => ref.invalidate(trendingMangaProvider),
                         icon: const Icon(Icons.refresh),
                         label: const Text('Retry'),
                         style: ElevatedButton.styleFrom(

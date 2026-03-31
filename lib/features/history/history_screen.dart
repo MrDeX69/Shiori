@@ -67,8 +67,18 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
     if (d == today) return 'Today';
     if (d == yesterday) return 'Yesterday';
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
@@ -89,9 +99,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
       _history.removeWhere((h) => h.chapterId == item.chapterId);
     });
     final db = getIt<AppDatabase>();
-    await (db.delete(db.chapterProgressTable)
-      ..where((t) => t.chapterId.equals(item.chapterId)))
-        .go();
+    await (db.delete(
+      db.chapterProgressTable,
+    )..where((t) => t.chapterId.equals(item.chapterId))).go();
   }
 
   Future<void> _clearHistory() async {
@@ -126,34 +136,42 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
             actions: [
               if (_history.isNotEmpty)
                 IconButton(
-                  icon: Icon(Icons.delete_sweep_outlined,
-                      color: cs.onSurface.withOpacity(0.54)),
+                  icon: Icon(
+                    Icons.delete_sweep_outlined,
+                    color: cs.onSurface.withValues(alpha: 0.54),
+                  ),
                   onPressed: () async {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (dialogContext) => AlertDialog(
                         backgroundColor: cs.surfaceContainerHighest,
-                        title: Text('Clear History',
-                            style: TextStyle(color: cs.onSurface)),
+                        title: Text(
+                          'Clear History',
+                          style: TextStyle(color: cs.onSurface),
+                        ),
                         content: Text(
                           'Are you sure you want to clear all reading history?',
                           style: TextStyle(
-                              color: cs.onSurface.withOpacity(0.54)),
+                            color: cs.onSurface.withValues(alpha: 0.54),
+                          ),
                         ),
                         actions: [
                           TextButton(
                             onPressed: () =>
                                 Navigator.pop(dialogContext, false),
-                            child: Text('Cancel',
-                                style: TextStyle(
-                                    color: cs.onSurface
-                                        .withOpacity(0.54))),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: cs.onSurface.withValues(alpha: 0.54),
+                              ),
+                            ),
                           ),
                           TextButton(
-                            onPressed: () =>
-                                Navigator.pop(dialogContext, true),
-                            child: Text('Clear',
-                                style: TextStyle(color: accent)),
+                            onPressed: () => Navigator.pop(dialogContext, true),
+                            child: Text(
+                              'Clear',
+                              style: TextStyle(color: accent),
+                            ),
                           ),
                         ],
                       ),
@@ -177,26 +195,29 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        color: cs.surfaceContainerHighest,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: accent.withOpacity(0.3),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Icon(Icons.history_outlined,
-                          size: 48, color: accent),
-                    )
+                          width: 96,
+                          height: 96,
+                          decoration: BoxDecoration(
+                            color: cs.surfaceContainerHighest,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: accent.withValues(alpha: 0.3),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.history_outlined,
+                            size: 48,
+                            color: accent,
+                          ),
+                        )
                         .animate()
                         .scale(
-                      begin: const Offset(0.8, 0.8),
-                      end: const Offset(1.0, 1.0),
-                      duration: 500.ms,
-                      curve: Curves.elasticOut,
-                    )
+                          begin: const Offset(0.8, 0.8),
+                          end: const Offset(1.0, 1.0),
+                          duration: 500.ms,
+                          curve: Curves.elasticOut,
+                        )
                         .fadeIn(duration: 300.ms),
                     const SizedBox(height: 24),
                     Text(
@@ -211,7 +232,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
                     Text(
                       'Start reading to see your history here',
                       style: TextStyle(
-                        color: cs.onSurface.withOpacity(0.38),
+                        color: cs.onSurface.withValues(alpha: 0.38),
                         fontSize: 13,
                       ),
                     ).animate().fadeIn(delay: 300.ms, duration: 400.ms),
@@ -221,166 +242,162 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen>
             )
           else
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                  final item = flatList[index];
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final item = flatList[index];
 
-                  if (item is String) {
-                    return Padding(
-                      padding:
-                      const EdgeInsets.fromLTRB(16, 20, 16, 8),
-                      child: Text(
-                        item,
-                        style: TextStyle(
-                          color: accent,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
+                if (item is String) {
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                    child: Text(
+                      item,
+                      style: TextStyle(
+                        color: accent,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
                       ),
-                    );
-                  }
-
-                  final entry = item as ChapterProgressTableData;
-                  return Dismissible(
-                    key: Key(entry.chapterId),
-                    direction: DismissDirection.endToStart,
-                    onDismissed: (_) => _removeItem(entry),
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      color: Colors.red.withOpacity(0.8),
-                      child: const Icon(Icons.delete_outline,
-                          color: Colors.white),
                     ),
-                    child: InkWell(
-                      onTap: () async {
-                        HapticFeedback.lightImpact();
-                        final chapter = Chapter(
-                          id: entry.chapterId,
-                          mangaId: entry.mangaId,
-                          chapterNumber: entry.chapterNumber != null
-                              ? double.tryParse(entry.chapterNumber!)
-                              : null,
-                        );
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ReaderScreen(
-                              chapter: chapter,
-                              manga: null,
-                            ),
+                  );
+                }
+
+                final entry = item as ChapterProgressTableData;
+                return Dismissible(
+                  key: Key(entry.chapterId),
+                  direction: DismissDirection.endToStart,
+                  onDismissed: (_) => _removeItem(entry),
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    color: Colors.red.withValues(alpha: 0.8),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.white,
+                    ),
+                  ),
+                  child: InkWell(
+                    onTap: () async {
+                      HapticFeedback.lightImpact();
+                      final chapter = Chapter(
+                        id: entry.chapterId,
+                        mangaId: entry.mangaId,
+                        chapterNumber: entry.chapterNumber != null
+                            ? double.tryParse(entry.chapterNumber!)
+                            : null,
+                      );
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ReaderScreen(chapter: chapter, manga: null),
+                        ),
+                      );
+                      _loadHistory();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: entry.mangaCoverUrl != null
+                                ? Image.network(
+                                    entry.mangaCoverUrl!,
+                                    width: 44,
+                                    height: 60,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) =>
+                                        _placeholder(cs, accent),
+                                  )
+                                : _placeholder(cs, accent),
                           ),
-                        );
-                        _loadHistory();
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
-                        child: Row(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: entry.mangaCoverUrl != null
-                                  ? Image.network(
-                                entry.mangaCoverUrl!,
-                                width: 44,
-                                height: 60,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
-                                    _placeholder(cs, accent),
-                              )
-                                  : _placeholder(cs, accent),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    entry.mangaTitle.isNotEmpty
-                                        ? entry.mangaTitle
-                                        : 'Unknown Manga',
-                                    style: TextStyle(
-                                      color: cs.onSurface,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    entry.chapterNumber != null &&
-                                        entry.chapterNumber!
-                                            .isNotEmpty
-                                        ? 'Chapter ${entry.chapterNumber}'
-                                        : 'Unknown Chapter',
-                                    style: TextStyle(
-                                      color: accent.withOpacity(0.85),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        entry.isRead
-                                            ? Icons.check_circle_outline
-                                            : Icons.bookmark_outline,
-                                        size: 12,
-                                        color: cs.onSurface
-                                            .withOpacity(0.38),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        entry.isRead
-                                            ? 'Completed'
-                                            : 'Page ${entry.lastPage + 1}',
-                                        style: TextStyle(
-                                          color: cs.onSurface
-                                              .withOpacity(0.38),
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Column(
-                              crossAxisAlignment:
-                              CrossAxisAlignment.end,
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _timeAgo(entry.readAt),
+                                  entry.mangaTitle.isNotEmpty
+                                      ? entry.mangaTitle
+                                      : 'Unknown Manga',
                                   style: TextStyle(
-                                    color: cs.onSurface
-                                        .withOpacity(0.38),
-                                    fontSize: 11,
+                                    color: cs.onSurface,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
-                                Icon(
-                                  Icons.play_circle_outline,
-                                  color: accent.withOpacity(0.6),
-                                  size: 20,
+                                Text(
+                                  entry.chapterNumber != null &&
+                                          entry.chapterNumber!.isNotEmpty
+                                      ? 'Chapter ${entry.chapterNumber}'
+                                      : 'Unknown Chapter',
+                                  style: TextStyle(
+                                    color: accent.withValues(alpha: 0.85),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      entry.isRead
+                                          ? Icons.check_circle_outline
+                                          : Icons.bookmark_outline,
+                                      size: 12,
+                                      color: cs.onSurface.withValues(
+                                        alpha: 0.38,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      entry.isRead
+                                          ? 'Completed'
+                                          : 'Page ${entry.lastPage + 1}',
+                                      style: TextStyle(
+                                        color: cs.onSurface.withValues(
+                                          alpha: 0.38,
+                                        ),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                _timeAgo(entry.readAt),
+                                style: TextStyle(
+                                  color: cs.onSurface.withValues(alpha: 0.38),
+                                  fontSize: 11,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Icon(
+                                Icons.play_circle_outline,
+                                color: accent.withValues(alpha: 0.6),
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                  ).animate().fadeIn(
-                    delay: Duration(milliseconds: index * 30),
-                    duration: 250.ms,
-                  );
-                },
-                childCount: flatList.length,
-              ),
+                  ),
+                ).animate().fadeIn(
+                  delay: Duration(milliseconds: index * 30),
+                  duration: 250.ms,
+                );
+              }, childCount: flatList.length),
             ),
         ],
       ),
