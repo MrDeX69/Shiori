@@ -1,11 +1,15 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gal/gal.dart';
+import 'package:http/http.dart' as http;
 import 'package:palette_generator/palette_generator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../core/image/reader_isolate_warmup.dart';
@@ -73,8 +77,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   // ── Brightness swipe ──────────────────────────────────────────────────────
   bool _showBrightnessIndicator = false;
   Timer? _brightnessIndicatorTimer;
-  // Tracks drag start brightness so delta is relative, not jumpy.
   double _dragStartBrightness = 1.0;
+
+  // ── Save to gallery ───────────────────────────────────────────────────────
+  bool _isSavingImage = false;
 
   bool _showTransitionOverlay = false;
   bool _autoTransitionEnabled = true;
@@ -95,14 +101,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
   int get _transitionSeconds {
     switch (_transitionSpeed) {
-      case TransitionSpeed.instant:
-        return 0;
-      case TransitionSpeed.fast:
-        return 1;
-      case TransitionSpeed.normal:
-        return 3;
-      case TransitionSpeed.slow:
-        return 5;
+      case TransitionSpeed.instant: return 0;
+      case TransitionSpeed.fast:    return 1;
+      case TransitionSpeed.normal:  return 3;
+      case TransitionSpeed.slow:    return 5;
     }
   }
 
@@ -134,21 +136,155 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     super.dispose();
   }
 
-  // ── Brightness swipe handlers ─────────────────────────────────────────────
+  // ── Save to gallery ───────────────────────────────────────────────────────
+
+  Future<void> _savePageToGallery(String url) async {
+    if (_isSavingImage) return;
+    setState(() => _isSavingImage = true);
+
+    try {
+      // Check/request permission
+      final hasAccess = await Gal.hasAccess();
+      if (!hasAccess) {
+        final granted = await Gal.requestAccess();
+        if (!granted) {
+          if (mounted) _showSaveSnackBar('Permission denied', isError: true);
+          return;
+        }
+      }
+
+      // Download image to temp file
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode != 200) {
+        if (mounted) _showSaveSnackBar('Download failed', isError: true);
+        return;
+      }
+
+      final tmpDir = await getTemporaryDirectory();
+      final fileName =
+          'shiori_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final file = File('${tmpDir.path}/$fileName');
+      await file.writeAsBytes(response.bodyBytes);
+
+      // Save to gallery in "Shiori" album
+      await Gal.putImage(file.path, album: 'Shiori');
+
+      // Cleanup temp file
+      await file.delete();
+
+      if (mounted) {
+        HapticFeedback.mediumImpact();
+        _showSaveSnackBar('Saved to gallery');
+      }
+    } catch (e) {
+      if (mounted) _showSaveSnackBar('Save failed', isError: true);
+    } finally {
+      if (mounted) setState(() => _isSavingImage = false);
+    }
+  }
+
+  void _showSaveSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline : Icons.check_circle_outline,
+              color: Colors.white,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(message,
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w500)),
+          ],
+        ),
+        backgroundColor:
+        isError ? const Color(0xFF3D1515) : const Color(0xFF1A2A1A),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _onImageLongPress(String url) {
+    HapticFeedback.mediumImpact();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF12121A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) {
+        final accent = ref.read(accentColorProvider);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(Icons.download_rounded, color: accent, size: 20),
+                  ),
+                  title: const Text('Save to Gallery',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500)),
+                  subtitle: const Text('Save in Shiori album',
+                      style: TextStyle(color: Colors.white38, fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _savePageToGallery(url);
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.close, color: Colors.white54, size: 20),
+                  ),
+                  title: const Text('Cancel',
+                      style: TextStyle(color: Colors.white54, fontSize: 15)),
+                  onTap: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Brightness swipe ──────────────────────────────────────────────────────
 
   void _onBrightnessDragStart(DragStartDetails details) {
     _dragStartBrightness = _brightness;
   }
 
-  void _onBrightnessDragUpdate(DragUpdateDetails details, double screenHeight) {
-    // dy is positive going down → decrease brightness
-    // Sensitivity: full screen height drag = full range (0.9 range / screenHeight)
-    final delta = -details.delta.dy / screenHeight * 0.9;
-    final newBrightness = (_dragStartBrightness + delta -
-        details.localPosition.dy / screenHeight * 0)
-        .clamp(0.1, 1.0);
-
-    // Recalculate from cumulative drag, not delta, to avoid drift
+  void _onBrightnessDragUpdate(
+      DragUpdateDetails details, double screenHeight) {
     setState(() {
       _brightness =
           (_dragStartBrightness + (-details.primaryDelta! / screenHeight) * 1.5)
@@ -156,7 +292,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       _dragStartBrightness = _brightness;
       _showBrightnessIndicator = true;
     });
-
     _brightnessIndicatorTimer?.cancel();
     _brightnessIndicatorTimer = Timer(const Duration(milliseconds: 1200), () {
       if (mounted) setState(() => _showBrightnessIndicator = false);
@@ -170,8 +305,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     });
   }
 
-  // ── Brightness indicator widget ───────────────────────────────────────────
-
   Widget _buildBrightnessIndicator(Color accent) {
     final pct = ((_brightness - 0.1) / 0.9).clamp(0.0, 1.0);
     return Positioned(
@@ -184,7 +317,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           duration: const Duration(milliseconds: 200),
           child: Container(
             width: 44,
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+            padding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.70),
               borderRadius: BorderRadius.circular(22),
@@ -203,7 +337,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   size: 18,
                 ),
                 const SizedBox(height: 10),
-                // Vertical bar
                 SizedBox(
                   width: 4,
                   height: 80,
@@ -212,9 +345,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     child: Stack(
                       alignment: Alignment.bottomCenter,
                       children: [
-                        // Track
                         Container(color: Colors.white12),
-                        // Fill
                         FractionallySizedBox(
                           heightFactor: pct.clamp(0.02, 1.0),
                           child: Container(
@@ -232,12 +363,39 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 Text(
                   '${(pct * 100).round()}%',
                   style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                  ),
+                      color: Colors.white70,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600),
                 ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Save indicator overlay ────────────────────────────────────────────────
+
+  Widget _buildSaveIndicator() {
+    return Positioned.fill(
+      child: AnimatedOpacity(
+        opacity: _isSavingImage ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 200),
+        child: IgnorePointer(
+          ignoring: !_isSavingImage,
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.50),
+            child: const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  SizedBox(height: 12),
+                  Text('Saving…',
+                      style: TextStyle(color: Colors.white70, fontSize: 13)),
+                ],
+              ),
             ),
           ),
         ),
@@ -519,12 +677,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         final ch = chapters[i];
         if (!ch.isRead) {
           await db.markChapterRead(
-            ch.id,
-            widget.manga!.id,
-            widget.manga!.title,
-            widget.manga!.coverUrl,
-            ch.chapterNumber?.toString(),
-            true,
+            ch.id, widget.manga!.id, widget.manga!.title,
+            widget.manga!.coverUrl, ch.chapterNumber?.toString(), true,
           );
         }
       }
@@ -564,10 +718,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       _autoTransitionTimer?.cancel();
       _autoTransitionTimer =
           Timer.periodic(const Duration(seconds: 1), (timer) {
-            if (!mounted) {
-              timer.cancel();
-              return;
-            }
+            if (!mounted) { timer.cancel(); return; }
             setState(() => _autoTransitionCountdown--);
             if (_autoTransitionCountdown <= 0) {
               timer.cancel();
@@ -710,6 +861,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     );
   }
 
+  // Webtoon image — with long-press save
   Widget _webtoonPageImage(BuildContext context, String url) {
     final mq = MediaQuery.of(context);
     final w = mq.size.width;
@@ -718,36 +870,40 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     final memW = (w * dpr).round().clamp(1, 8192);
     final memH = (slotH * dpr).round().clamp(256, 8192);
 
-    return ColoredBox(
-      color: Colors.black,
-      child: SizedBox(
-        width: w,
-        child: CachedNetworkImage(
-          imageUrl: url,
+    return GestureDetector(
+      onLongPress: () => _onImageLongPress(url),
+      child: ColoredBox(
+        color: Colors.black,
+        child: SizedBox(
           width: w,
-          memCacheWidth: memW,
-          memCacheHeight: memH,
-          fit: BoxFit.fitWidth,
-          alignment: Alignment.topCenter,
-          filterQuality: FilterQuality.medium,
-          fadeInDuration: Duration.zero,
-          fadeOutDuration: Duration.zero,
-          placeholder: (c, _) => _readerImagePlaceholder(context),
-          imageBuilder: (context, imageProvider) => Image(
-            image: imageProvider,
+          child: CachedNetworkImage(
+            imageUrl: url,
             width: w,
+            memCacheWidth: memW,
+            memCacheHeight: memH,
             fit: BoxFit.fitWidth,
             alignment: Alignment.topCenter,
             filterQuality: FilterQuality.medium,
-            gaplessPlayback: true,
-            isAntiAlias: false,
+            fadeInDuration: Duration.zero,
+            fadeOutDuration: Duration.zero,
+            placeholder: (c, _) => _readerImagePlaceholder(context),
+            imageBuilder: (context, imageProvider) => Image(
+              image: imageProvider,
+              width: w,
+              fit: BoxFit.fitWidth,
+              alignment: Alignment.topCenter,
+              filterQuality: FilterQuality.medium,
+              gaplessPlayback: true,
+              isAntiAlias: false,
+            ),
+            errorWidget: (ctx, o, e) => _readerImageError(ctx, url),
           ),
-          errorWidget: (ctx, o, e) => _readerImageError(ctx, url),
         ),
       ),
     );
   }
 
+  // Paged image — with long-press save
   Widget _cachedPageImage(BuildContext context, String url) {
     final mq = MediaQuery.of(context);
     final w = mq.size.width;
@@ -756,28 +912,31 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     final memW = (w * dpr).round().clamp(1, 8192);
     final memH = (slotH * dpr).round().clamp(256, 8192);
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: slotH, minWidth: w),
-        child: CachedNetworkImage(
-          imageUrl: url,
-          width: w,
-          fit: BoxFit.fitWidth,
-          memCacheWidth: memW,
-          memCacheHeight: memH,
-          filterQuality: FilterQuality.medium,
-          fadeInDuration: Duration.zero,
-          fadeOutDuration: Duration.zero,
-          placeholder: (c, _) => _readerImagePlaceholder(context),
-          imageBuilder: (context, imageProvider) => Image(
-            image: imageProvider,
+    return GestureDetector(
+      onLongPress: () => _onImageLongPress(url),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: slotH, minWidth: w),
+          child: CachedNetworkImage(
+            imageUrl: url,
             width: w,
             fit: BoxFit.fitWidth,
-            alignment: Alignment.center,
+            memCacheWidth: memW,
+            memCacheHeight: memH,
             filterQuality: FilterQuality.medium,
-            gaplessPlayback: true,
+            fadeInDuration: Duration.zero,
+            fadeOutDuration: Duration.zero,
+            placeholder: (c, _) => _readerImagePlaceholder(context),
+            imageBuilder: (context, imageProvider) => Image(
+              image: imageProvider,
+              width: w,
+              fit: BoxFit.fitWidth,
+              alignment: Alignment.center,
+              filterQuality: FilterQuality.medium,
+              gaplessPlayback: true,
+            ),
+            errorWidget: (ctx, o, e) => _readerImageError(ctx, url),
           ),
-          errorWidget: (ctx, o, e) => _readerImageError(ctx, url),
         ),
       ),
     );
@@ -1023,7 +1182,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 const Text('Brightness',
                     style: TextStyle(color: Colors.white54, fontSize: 13)),
                 const SizedBox(height: 4),
-                // Hint za swipe gesture
                 const Text('Swipe left side of screen to adjust',
                     style: TextStyle(color: Colors.white24, fontSize: 11)),
                 const SizedBox(height: 8),
@@ -1077,15 +1235,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                         final sel = _transitionSpeed == speed;
                         final label = switch (speed) {
                           TransitionSpeed.instant => 'Instant',
-                          TransitionSpeed.fast => '1s',
-                          TransitionSpeed.normal => '3s',
-                          TransitionSpeed.slow => '5s',
+                          TransitionSpeed.fast    => '1s',
+                          TransitionSpeed.normal  => '3s',
+                          TransitionSpeed.slow    => '5s',
                         };
                         final icon = switch (speed) {
                           TransitionSpeed.instant => Icons.bolt,
-                          TransitionSpeed.fast => Icons.fast_forward,
-                          TransitionSpeed.normal => Icons.play_arrow,
-                          TransitionSpeed.slow => Icons.slow_motion_video,
+                          TransitionSpeed.fast    => Icons.fast_forward,
+                          TransitionSpeed.normal  => Icons.play_arrow,
+                          TransitionSpeed.slow    => Icons.slow_motion_video,
                         };
                         return Expanded(
                           child: GestureDetector(
@@ -1106,8 +1264,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                                     : const Color(0xFF1C1C28),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                    color:
-                                    sel ? accent : Colors.transparent),
+                                    color: sel ? accent : Colors.transparent),
                               ),
                               child: Column(children: [
                                 Icon(icon,
@@ -1194,9 +1351,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                             size: 22),
                         const SizedBox(width: 12),
                         Text(
-                          _autoScroll
-                              ? 'Auto Scroll: ON'
-                              : 'Auto Scroll: OFF',
+                          _autoScroll ? 'Auto Scroll: ON' : 'Auto Scroll: OFF',
                           style: TextStyle(
                             color: _autoScroll ? accent : Colors.white54,
                             fontSize: 14,
@@ -1232,10 +1387,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          if (_mode == mode) {
-            Navigator.pop(ctx);
-            return;
-          }
+          if (_mode == mode) { Navigator.pop(ctx); return; }
           _autoScrollTimer?.cancel();
           _autoTransitionTimer?.cancel();
           _readerChromeIdleTimer?.cancel();
@@ -1375,14 +1527,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
               ),
             ),
 
-            // ── Brightness swipe zone (left third of screen) ──────────
-            // Positioned above content but below controls so taps still
-            // toggle controls when not dragging.
+            // ── Brightness swipe zone (left third) ───────────────────
             if (!_showTransitionOverlay)
               Positioned(
-                left: 0,
-                top: 0,
-                bottom: 0,
+                left: 0, top: 0, bottom: 0,
                 width: screenWidth / 3,
                 child: GestureDetector(
                   behavior: HitTestBehavior.translucent,
@@ -1399,9 +1547,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 _mode != ReaderMode.webtoon &&
                 !_showTransitionOverlay)
               Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
+                bottom: 0, left: 0, right: 0,
                 child: LinearProgressIndicator(
                   value: (_currentPage + 1) /
                       pagesAsync.asData!.value.length,
@@ -1414,9 +1560,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             // ── Top bar ───────────────────────────────────────────────
             if (_showControls && !_showTransitionOverlay)
               Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
+                top: 0, left: 0, right: 0,
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -1433,8 +1577,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   child: SafeArea(
                     child: Row(children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back,
-                            color: Colors.white),
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
                         onPressed: () => context.pop(),
                       ),
                       Expanded(
@@ -1469,8 +1612,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                               border: Border.all(
                                   color: accent.withValues(alpha: 0.5)),
                             ),
-                            child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                            child: Row(mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.pause, color: accent, size: 14),
                                   const SizedBox(width: 4),
@@ -1489,8 +1631,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                               color: Colors.white38, size: 18),
                         ),
                       IconButton(
-                        icon: const Icon(Icons.settings,
-                            color: Colors.white),
+                        icon: const Icon(Icons.settings, color: Colors.white),
                         onPressed: () => _showSettingsSheet(context),
                       ),
                     ]),
@@ -1501,9 +1642,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             // ── Bottom bar ────────────────────────────────────────────
             if (_showControls && !_showTransitionOverlay)
               Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
+                bottom: 0, left: 0, right: 0,
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -1522,8 +1661,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
                       child: pagesAsync.asData != null
                           ? Row(
-                        mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           GestureDetector(
                             onTap: _goToPreviousChapter,
@@ -1577,8 +1715,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                         }
                       }
                       final estH = (h * 0.92).clamp(240.0, 2000.0);
-                      final idx =
-                      _webtoonController.hasClients && total > 0
+                      final idx = _webtoonController.hasClients && total > 0
                           ? (() {
                         final p = _webtoonController.position;
                         if (!p.hasContentDimensions) return 0;
@@ -1607,8 +1744,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                                   widthFactor: 1,
                                   alignment: Alignment.bottomCenter,
                                   child: ColoredBox(
-                                    color: Color.lerp(accent,
-                                        _readerPaletteTint, 0.38) ??
+                                    color: Color.lerp(
+                                        accent, _readerPaletteTint, 0.38) ??
                                         accent,
                                   ),
                                 ),
@@ -1622,8 +1759,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                             top: h * 0.36,
                             child: DecoratedBox(
                               decoration: BoxDecoration(
-                                color:
-                                Colors.black.withValues(alpha: 0.60),
+                                color: Colors.black.withValues(alpha: 0.60),
                                 borderRadius: BorderRadius.circular(22),
                                 border: Border.all(
                                     color: accent.withValues(alpha: 0.4)),
@@ -1645,9 +1781,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 ),
               ),
 
-            // ── Brightness indicator (left side) ──────────────────────
+            // ── Brightness indicator ──────────────────────────────────
             if (!_showTransitionOverlay)
               _buildBrightnessIndicator(accent),
+
+            // ── Save indicator ────────────────────────────────────────
+            _buildSaveIndicator(),
 
             // ── Transition overlay ────────────────────────────────────
             AnimatedSwitcher(
@@ -1680,8 +1819,7 @@ class _ChapterSeparator extends StatelessWidget {
         child: Row(children: [
           Expanded(
               child: Divider(
-                  height: 1,
-                  thickness: 1,
+                  height: 1, thickness: 1,
                   color: accent.withValues(alpha: 0.2))),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -1695,8 +1833,7 @@ class _ChapterSeparator extends StatelessWidget {
           ),
           Expanded(
               child: Divider(
-                  height: 1,
-                  thickness: 1,
+                  height: 1, thickness: 1,
                   color: accent.withValues(alpha: 0.2))),
         ]),
       ),
