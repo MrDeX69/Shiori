@@ -70,6 +70,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   bool _preloadTriggered = false;
   double _brightness = 1.0;
 
+  // ── Brightness swipe ──────────────────────────────────────────────────────
+  bool _showBrightnessIndicator = false;
+  Timer? _brightnessIndicatorTimer;
+  // Tracks drag start brightness so delta is relative, not jumpy.
+  double _dragStartBrightness = 1.0;
+
   bool _showTransitionOverlay = false;
   bool _autoTransitionEnabled = true;
   TransitionSpeed _transitionSpeed = TransitionSpeed.normal;
@@ -117,6 +123,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     _autoTransitionTimer?.cancel();
     _scrollBubbleTimer?.cancel();
     _readerChromeIdleTimer?.cancel();
+    _brightnessIndicatorTimer?.cancel();
     _pageController?.dispose();
     _webtoonController.removeListener(_onWebtoonScroll);
     _webtoonController.dispose();
@@ -125,6 +132,117 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     WakelockPlus.disable();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
+  }
+
+  // ── Brightness swipe handlers ─────────────────────────────────────────────
+
+  void _onBrightnessDragStart(DragStartDetails details) {
+    _dragStartBrightness = _brightness;
+  }
+
+  void _onBrightnessDragUpdate(DragUpdateDetails details, double screenHeight) {
+    // dy is positive going down → decrease brightness
+    // Sensitivity: full screen height drag = full range (0.9 range / screenHeight)
+    final delta = -details.delta.dy / screenHeight * 0.9;
+    final newBrightness = (_dragStartBrightness + delta -
+        details.localPosition.dy / screenHeight * 0)
+        .clamp(0.1, 1.0);
+
+    // Recalculate from cumulative drag, not delta, to avoid drift
+    setState(() {
+      _brightness =
+          (_dragStartBrightness + (-details.primaryDelta! / screenHeight) * 1.5)
+              .clamp(0.1, 1.0);
+      _dragStartBrightness = _brightness;
+      _showBrightnessIndicator = true;
+    });
+
+    _brightnessIndicatorTimer?.cancel();
+    _brightnessIndicatorTimer = Timer(const Duration(milliseconds: 1200), () {
+      if (mounted) setState(() => _showBrightnessIndicator = false);
+    });
+  }
+
+  void _onBrightnessDragEnd(DragEndDetails _) {
+    _brightnessIndicatorTimer?.cancel();
+    _brightnessIndicatorTimer = Timer(const Duration(milliseconds: 800), () {
+      if (mounted) setState(() => _showBrightnessIndicator = false);
+    });
+  }
+
+  // ── Brightness indicator widget ───────────────────────────────────────────
+
+  Widget _buildBrightnessIndicator(Color accent) {
+    final pct = ((_brightness - 0.1) / 0.9).clamp(0.0, 1.0);
+    return Positioned(
+      left: 20,
+      top: 0,
+      bottom: 0,
+      child: Center(
+        child: AnimatedOpacity(
+          opacity: _showBrightnessIndicator ? 1.0 : 0.0,
+          duration: const Duration(milliseconds: 200),
+          child: Container(
+            width: 44,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.70),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: Colors.white12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  pct > 0.6
+                      ? Icons.brightness_high
+                      : pct > 0.3
+                      ? Icons.brightness_medium
+                      : Icons.brightness_low,
+                  color: Colors.white70,
+                  size: 18,
+                ),
+                const SizedBox(height: 10),
+                // Vertical bar
+                SizedBox(
+                  width: 4,
+                  height: 80,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(2),
+                    child: Stack(
+                      alignment: Alignment.bottomCenter,
+                      children: [
+                        // Track
+                        Container(color: Colors.white12),
+                        // Fill
+                        FractionallySizedBox(
+                          heightFactor: pct.clamp(0.02, 1.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: accent,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${(pct * 100).round()}%',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _scheduleReaderPalette() async {
@@ -384,8 +502,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     final next = index + 1;
     if (next < pages.length && context.mounted) {
       final pm = PreloadManager.fromContext(context);
-      unawaited(
-          pm.prefetchUrls(context, pages, startIndex: next, count: 3));
+      unawaited(pm.prefetchUrls(context, pages, startIndex: next, count: 3));
     }
   }
 
@@ -401,9 +518,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       for (int i = 0; i < idx; i++) {
         final ch = chapters[i];
         if (!ch.isRead) {
-          await db.markChapterRead(ch.id, widget.manga!.id,
-              widget.manga!.title, widget.manga!.coverUrl,
-              ch.chapterNumber?.toString(), true);
+          await db.markChapterRead(
+            ch.id,
+            widget.manga!.id,
+            widget.manga!.title,
+            widget.manga!.coverUrl,
+            ch.chapterNumber?.toString(),
+            true,
+          );
         }
       }
     } catch (_) {}
@@ -534,8 +656,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       : ch.title ?? 'Chapter';
 
   String _buildPageText(int total) {
-    if (_mode == ReaderMode.webtoon || total == 0 || _currentPage >= total)
+    if (_mode == ReaderMode.webtoon || total == 0 || _currentPage >= total) {
       return '';
+    }
     return '${_currentPage + 1} / $total';
   }
 
@@ -672,8 +795,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       child: ListView.builder(
         controller: _webtoonController,
         padding: EdgeInsets.zero,
-        physics:
-        const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics()),
         clipBehavior: Clip.hardEdge,
         cacheExtent: 3200,
         itemCount: _webtoonItems.length + (_reachedWebtoonEnd ? 1 : 0),
@@ -899,6 +1022,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 const SizedBox(height: 24),
                 const Text('Brightness',
                     style: TextStyle(color: Colors.white54, fontSize: 13)),
+                const SizedBox(height: 4),
+                // Hint za swipe gesture
+                const Text('Swipe left side of screen to adjust',
+                    style: TextStyle(color: Colors.white24, fontSize: 11)),
                 const SizedBox(height: 8),
                 Row(children: [
                   const Icon(Icons.brightness_low,
@@ -979,7 +1106,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                                     : const Color(0xFF1C1C28),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                    color: sel ? accent : Colors.transparent),
+                                    color:
+                                    sel ? accent : Colors.transparent),
                               ),
                               child: Column(children: [
                                 Icon(icon,
@@ -1057,7 +1185,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                             : const Color(0xFF1C1C28),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            color: _autoScroll ? accent : Colors.transparent),
+                            color:
+                            _autoScroll ? accent : Colors.transparent),
                       ),
                       child: Row(children: [
                         Icon(Icons.play_circle_outline,
@@ -1065,7 +1194,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                             size: 22),
                         const SizedBox(width: 12),
                         Text(
-                          _autoScroll ? 'Auto Scroll: ON' : 'Auto Scroll: OFF',
+                          _autoScroll
+                              ? 'Auto Scroll: ON'
+                              : 'Auto Scroll: OFF',
                           style: TextStyle(
                             color: _autoScroll ? accent : Colors.white54,
                             fontSize: 14,
@@ -1137,8 +1268,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color:
-            sel ? accent.withValues(alpha: 0.2) : const Color(0xFF1C1C28),
+            color: sel
+                ? accent.withValues(alpha: 0.2)
+                : const Color(0xFF1C1C28),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: sel ? accent : Colors.transparent),
           ),
@@ -1164,6 +1296,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     final pagesAsync = ref.watch(readerPagesProvider(widget.chapter.id));
     final incognito = ref.watch(incognitoEnabledProvider);
     final accent = ref.watch(accentColorProvider);
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final screenHeight = MediaQuery.sizeOf(context).height;
 
     if (!_progressLoaded) {
       return const Scaffold(
@@ -1241,13 +1375,33 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
               ),
             ),
 
+            // ── Brightness swipe zone (left third of screen) ──────────
+            // Positioned above content but below controls so taps still
+            // toggle controls when not dragging.
+            if (!_showTransitionOverlay)
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: screenWidth / 3,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onVerticalDragStart: _onBrightnessDragStart,
+                  onVerticalDragUpdate: (d) =>
+                      _onBrightnessDragUpdate(d, screenHeight),
+                  onVerticalDragEnd: _onBrightnessDragEnd,
+                ),
+              ),
+
             // ── Progress bar (paged only) ─────────────────────────────
             if (pagesAsync.asData?.value != null &&
                 pagesAsync.asData!.value.isNotEmpty &&
                 _mode != ReaderMode.webtoon &&
                 !_showTransitionOverlay)
               Positioned(
-                bottom: 0, left: 0, right: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
                 child: LinearProgressIndicator(
                   value: (_currentPage + 1) /
                       pagesAsync.asData!.value.length,
@@ -1257,10 +1411,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 ),
               ),
 
-            // ── Top bar — clean gradient, no blur ─────────────────────
+            // ── Top bar ───────────────────────────────────────────────
             if (_showControls && !_showTransitionOverlay)
               Positioned(
-                top: 0, left: 0, right: 0,
+                top: 0,
+                left: 0,
+                right: 0,
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -1313,7 +1469,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                               border: Border.all(
                                   color: accent.withValues(alpha: 0.5)),
                             ),
-                            child: Row(mainAxisSize: MainAxisSize.min,
+                            child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.pause, color: accent, size: 14),
                                   const SizedBox(width: 4),
@@ -1341,10 +1498,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 ),
               ),
 
-            // ── Bottom bar — clean gradient, no blur ──────────────────
+            // ── Bottom bar ────────────────────────────────────────────
             if (_showControls && !_showTransitionOverlay)
               Positioned(
-                bottom: 0, left: 0, right: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -1392,7 +1551,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 ),
               ),
 
-            // ── Webtoon sidebar (no blur) ─────────────────────────────
+            // ── Webtoon sidebar ───────────────────────────────────────
             if (_mode == ReaderMode.webtoon &&
                 _readerShowWebtoonSidebar &&
                 _showControls &&
@@ -1413,12 +1572,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                         final pos = _webtoonController.position;
                         if (pos.hasContentDimensions &&
                             pos.maxScrollExtent > 0) {
-                          progress =
-                              (pos.pixels / pos.maxScrollExtent).clamp(0.0, 1.0);
+                          progress = (pos.pixels / pos.maxScrollExtent)
+                              .clamp(0.0, 1.0);
                         }
                       }
                       final estH = (h * 0.92).clamp(240.0, 2000.0);
-                      final idx = _webtoonController.hasClients && total > 0
+                      final idx =
+                      _webtoonController.hasClients && total > 0
                           ? (() {
                         final p = _webtoonController.position;
                         if (!p.hasContentDimensions) return 0;
@@ -1431,7 +1591,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       final barBottom = mq.padding.bottom + 96;
 
                       return Stack(children: [
-                        // Scrollbar track + thumb — no blur
                         Positioned(
                           right: 4,
                           top: barTop,
@@ -1448,8 +1607,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                                   widthFactor: 1,
                                   alignment: Alignment.bottomCenter,
                                   child: ColoredBox(
-                                    color: Color.lerp(
-                                        accent, _readerPaletteTint, 0.38) ??
+                                    color: Color.lerp(accent,
+                                        _readerPaletteTint, 0.38) ??
                                         accent,
                                   ),
                                 ),
@@ -1457,14 +1616,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                             ),
                           ),
                         ),
-                        // Page bubble
                         if (_showWebtoonPageBubble)
                           Positioned(
                             right: 16,
                             top: h * 0.36,
                             child: DecoratedBox(
                               decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.60),
+                                color:
+                                Colors.black.withValues(alpha: 0.60),
                                 borderRadius: BorderRadius.circular(22),
                                 border: Border.all(
                                     color: accent.withValues(alpha: 0.4)),
@@ -1485,6 +1644,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   ),
                 ),
               ),
+
+            // ── Brightness indicator (left side) ──────────────────────
+            if (!_showTransitionOverlay)
+              _buildBrightnessIndicator(accent),
 
             // ── Transition overlay ────────────────────────────────────
             AnimatedSwitcher(
