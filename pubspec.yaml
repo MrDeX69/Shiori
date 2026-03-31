@@ -36,6 +36,7 @@ dependencies:
   url_launcher: ^6.3.0
   wakelock_plus: ^1.2.8
   cached_network_image: ^3.4.1
+  gal: ^2.3.0
 
 dev_dependencies:
   flutter_test:

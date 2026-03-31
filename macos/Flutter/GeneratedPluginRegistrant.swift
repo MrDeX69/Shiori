@@ -7,6 +7,7 @@ import Foundation
 
 import connectivity_plus
 import dynamic_color
+import gal
 import local_auth_darwin
 import package_info_plus
 import shared_preferences_foundation
@@ -18,6 +19,7 @@ import wakelock_plus
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   ConnectivityPlusPlugin.register(with: registry.registrar(forPlugin: "ConnectivityPlusPlugin"))
   DynamicColorPlugin.register(with: registry.registrar(forPlugin: "DynamicColorPlugin"))
+  GalPlugin.register(with: registry.registrar(forPlugin: "GalPlugin"))
   LocalAuthPlugin.register(with: registry.registrar(forPlugin: "LocalAuthPlugin"))
   FPPPackageInfoPlusPlugin.register(with: registry.registrar(forPlugin: "FPPPackageInfoPlusPlugin"))
   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))
